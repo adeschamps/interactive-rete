@@ -5,7 +5,8 @@ import Set
 
 
 type alias Production =
-    { name : String
+    { id : Int
+    , name : String
     , conditions : List Condition
     }
 
@@ -26,8 +27,8 @@ type Test
 ---- PARSER ----
 
 
-parser : String -> Parser Production
-parser name =
+parser : Int -> String -> Parser Production
+parser id name =
     Parser.sequence
         { start = ""
         , separator = ""
@@ -36,7 +37,7 @@ parser name =
         , item = condition
         , trailing = Parser.Optional
         }
-        |> Parser.map (\conditions -> { name = name, conditions = conditions })
+        |> Parser.map (\conditions -> { id = id, name = name, conditions = conditions })
 
 
 condition : Parser Condition
@@ -105,13 +106,16 @@ testData =
         c10 =
             Condition (var "a") (const "left-of") (var "d")
     in
-    [ { name = "P1"
+    [ { id = 1
+      , name = "P1"
       , conditions = [ c1, c2, c3 ]
       }
-    , { name = "P2"
+    , { id = 2
+      , name = "P2"
       , conditions = [ c1, c2, c4, c5 ]
       }
-    , { name = "P3"
+    , { id = 3
+      , name = "P3"
       , conditions = [ c1, c2, c4, c3 ]
       }
     ]

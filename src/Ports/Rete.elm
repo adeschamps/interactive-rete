@@ -1,48 +1,53 @@
-port module Ports.Rete exposing (Msg(..), subscriptions)
+port module Ports.Rete exposing
+    ( Msg(..), subscriptions
+    , addProduction, removeProduction, addWme, removeWme
+    )
+
+{-| This module defines the interface for interacting with the
+underlying rete implementation.
+
+
+# Incoming
+
+@docs Msg, subscriptions
+
+
+# Outgoing
+
+@docs addProduction, removeProduction, addWme, removeWme
+
+-}
 
 ------ INCOMING ------
 
 
+{-| All the different event types.
+-}
 type Msg
-    = AddedSymbol AddedSymbolArgs
-    | RemovedSymbol RemovedSymbolArgs
-    | AddedNode AddedNodeArgs
+    = AddedNode AddedNodeArgs
     | RemovedNode RemovedNodeArgs
     | AddedProduction AddedProductionArgs
     | RemovedProduction RemovedProductionArgs
     | AddedToken AddedTokenArgs
     | RemovedToken RemovedTokenArgs
+    | AddedWme AddedWmeArgs
+    | RemovedWme RemovedWmeArgs
 
 
+{-| Subscribe to all the different event types.
+-}
 subscriptions : Sub Msg
 subscriptions =
     Sub.batch
-        [ addedSymbol AddedSymbol
-        , removedSymbol RemovedSymbol
-        , addedNode AddedNode
+        [ addedNode AddedNode
         , removedNode RemovedNode
         , addedProduction AddedProduction
         , removedProduction RemovedProduction
         , addedToken AddedToken
         , removedToken RemovedToken
+        , addedWme AddedWme
+        , removedWme RemovedWme
         ]
-
-
-port addedSymbol : (AddedSymbolArgs -> msg) -> Sub msg
-
-
-type alias AddedSymbolArgs =
-    { id : Int
-    , name : String
-    }
-
-
-port removedSymbol : (RemovedSymbolArgs -> msg) -> Sub msg
-
-
-type alias RemovedSymbolArgs =
-    { id : Int
-    }
 
 
 port addedNode : (AddedNodeArgs -> msg) -> Sub msg
@@ -53,6 +58,7 @@ type alias AddedNodeArgs =
     , parentId : Int
     , children : List Int
     , kind : String
+    , alphaNodeId : Maybe Int
     }
 
 
@@ -88,7 +94,8 @@ port addedToken : (AddedTokenArgs -> msg) -> Sub msg
 type alias AddedTokenArgs =
     { id : Int
     , parentId : Int
-    , wmeId : Int
+    , wmeTimetag : Int
+    , betaNodeId : Int
     }
 
 
@@ -100,31 +107,27 @@ type alias RemovedTokenArgs =
     }
 
 
+port addedWme : (AddedWmeArgs -> msg) -> Sub msg
+
+
+type alias AddedWmeArgs =
+    { timetag : Int
+    , id : Int
+    , attribute : Int
+    , value : Int
+    }
+
+
+port removedWme : (RemovedWmeArgs -> msg) -> Sub msg
+
+
+type alias RemovedWmeArgs =
+    { timetag : Int
+    }
+
+
 
 ------ OUTGOING ------
-
-
-type Command
-    = AddProduction AddProductionArgs
-    | RemoveProduction RemoveProductionArgs
-    | AddWme AddWmeArgs
-    | RemoveWme RemoveWmeArgs
-
-
-send : Command -> Cmd msg
-send command =
-    case command of
-        AddProduction args ->
-            addProduction args
-
-        RemoveProduction args ->
-            removeProduction args
-
-        AddWme args ->
-            addWme args
-
-        RemoveWme args ->
-            removeWme args
 
 
 port addProduction : AddProductionArgs -> Cmd msg
@@ -147,11 +150,15 @@ port addWme : AddWmeArgs -> Cmd msg
 
 
 type alias AddWmeArgs =
-    {}
+    { id : Int
+    , attribute : Int
+    , value : Int
+    }
 
 
 port removeWme : RemoveWmeArgs -> Cmd msg
 
 
 type alias RemoveWmeArgs =
-    {}
+    { timetag : Int
+    }

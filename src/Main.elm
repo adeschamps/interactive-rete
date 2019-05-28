@@ -18,6 +18,7 @@ import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode
 import Model.Production as Production exposing (Production, Test)
 import Model.Rete as Rete exposing (Rete)
+import Model.Symbols as Symbols exposing (Symbols)
 import Model.Wme as Wme exposing (Wme)
 import Model.Wmes as Wmes exposing (Wmes)
 import Palette
@@ -39,8 +40,8 @@ import View.Wme
 
 type alias Model =
     { productionInput : String
-    , productions : Dict String Production
-    , symbols : Dict Int String
+    , productions : Dict Int Production
+    , symbols : Symbols
     , selection : SymbolSelection
     , hover : SymbolSelection
     , productionEditor : ProductionEditor
@@ -81,9 +82,9 @@ init =
     ( { productionInput = ""
       , productions =
             Production.testData
-                |> List.map (\p -> ( p.name, p ))
+                |> List.map (\p -> ( p.id, p ))
                 |> Dict.fromList
-      , symbols = Dict.empty
+      , symbols = Symbols.new
       , selection = NoSelection
       , hover = NoSelection
       , productionEditor = NotEditing
@@ -227,13 +228,13 @@ update msg model =
             ( { model | productionEditor = Editing initialText }, Cmd.none )
 
         UserLeftEditor contents ->
-            case Parser.run (Production.parser "P") contents of
+            case Parser.run (Production.parser 0 "P") contents of
                 Ok production ->
                     ( { model
-                        | productions = model.productions |> Dict.insert production.name production
+                        | productions = model.productions |> Dict.insert production.id production
                         , productionEditor = NotEditing
                       }
-                    , Cmd.none
+                    , Ports.Rete.addProduction { name = production.name }
                     )
 
                 Err problems ->
@@ -345,7 +346,60 @@ moveNodeTo index ( x, y ) =
 
 updateRete : ReteMsg -> Model -> Model
 updateRete msg model =
-    model
+    case msg of
+        Ports.Rete.AddedNode args ->
+            Debug.todo "added node"
+
+        Ports.Rete.RemovedNode { id } ->
+            { model
+                | network = model.network |> Graph.remove id
+            }
+
+        Ports.Rete.AddedProduction { id, name, pNodeId } ->
+            let
+                production =
+                    { id = id, name = name, conditions = [] }
+            in
+            { model
+                | productions = model.productions |> Dict.insert production.id production
+            }
+
+        Ports.Rete.RemovedProduction { id } ->
+            { model
+                | productions = model.productions |> Dict.remove id
+            }
+
+        Ports.Rete.AddedToken { id, parentId, wmeTimetag, betaNodeId } ->
+            let
+                token =
+                    { id = id
+                    , token =
+                        { betaNode = betaNodeId
+                        , wme = Debug.todo "There are two implementations of a WME."
+
+                        -- model.wmes
+                        --     |> Wmes.get wmeTimetag
+                        --     |> Maybe.withDefault (Rete.Wme -1 -1 -1)
+                        }
+                    , parent = parentId
+                    }
+            in
+            { model
+                | rete = model.rete |> Rete.addToken token
+            }
+
+        Ports.Rete.RemovedToken { id } ->
+            { model
+                | rete = model.rete |> Rete.removeToken id
+            }
+
+        Ports.Rete.AddedWme args ->
+            Debug.todo "added wme"
+
+        Ports.Rete.RemovedWme { timetag } ->
+            { model
+                | wmes = model.wmes |> Wmes.remove timetag
+            }
 
 
 

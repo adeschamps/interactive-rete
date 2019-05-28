@@ -1,4 +1,4 @@
-module Model.Wmes exposing (Wmes, add, empty, remove, toList)
+module Model.Wmes exposing (Wmes, add, empty, get, remove, toList)
 
 import Dict exposing (Dict)
 import Model.Wme exposing (Wme)
@@ -11,6 +11,11 @@ type Wmes
 empty : Wmes
 empty =
     Wmes { wmes = Dict.empty, counter = 0 }
+
+
+get : Int -> Wmes -> Maybe Wme
+get id (Wmes { wmes }) =
+    Dict.get id wmes
 
 
 add : Wme -> Wmes -> Wmes
