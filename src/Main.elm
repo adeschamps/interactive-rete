@@ -22,6 +22,7 @@ import Model.Wme as Wme exposing (Wme)
 import Model.Wmes as Wmes exposing (Wmes)
 import Palette
 import Parser
+import Ports.Rete
 import Time
 import TypedSvg as Svg exposing (svg)
 import TypedSvg.Attributes as SvgAttr exposing (class, stroke, viewBox)
@@ -154,6 +155,7 @@ type Msg
     | UserRemovedWme Int
     | UserDeletedWme Int
     | Graph GraphMsg
+    | ReteChanged ReteMsg
 
 
 type GraphMsg
@@ -161,6 +163,10 @@ type GraphMsg
     | UserBeganDrag NodeId ( Float, Float )
     | UserContinuedDrag ( Float, Float )
     | UserEndedDrag ( Float, Float )
+
+
+type alias ReteMsg =
+    Ports.Rete.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -261,6 +267,9 @@ update msg model =
         Graph graphMsg ->
             ( model |> updateGraph graphMsg, Cmd.none )
 
+        ReteChanged reteMsg ->
+            ( model |> updateRete reteMsg, Cmd.none )
+
 
 updateGraph : GraphMsg -> Model -> Model
 updateGraph msg model =
@@ -334,27 +343,39 @@ moveNodeTo index ( x, y ) =
     Graph.update index (Maybe.map updateNode)
 
 
+updateRete : ReteMsg -> Model -> Model
+updateRete msg model =
+    model
+
+
 
 ---- SUBSCRIPTIONS ----
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.drag of
-        Nothing ->
-            if Force.isCompleted model.networkSimulation then
-                Sub.none
+    let
+        graphSubscriptions =
+            case model.drag of
+                Nothing ->
+                    if Force.isCompleted model.networkSimulation then
+                        Sub.none
 
-            else
-                Browser.Events.onAnimationFrame (BrowserSentAnimationFrame >> Graph)
+                    else
+                        Browser.Events.onAnimationFrame (BrowserSentAnimationFrame >> Graph)
 
-        Just _ ->
-            Sub.batch
-                [ Browser.Events.onMouseMove (Decode.map (.clientPos >> UserContinuedDrag) Mouse.eventDecoder)
-                , Browser.Events.onMouseUp (Decode.map (.clientPos >> UserEndedDrag) Mouse.eventDecoder)
-                , Browser.Events.onAnimationFrame BrowserSentAnimationFrame
-                ]
-                |> Sub.map Graph
+                Just _ ->
+                    Sub.batch
+                        [ Browser.Events.onMouseMove (Decode.map (.clientPos >> UserContinuedDrag) Mouse.eventDecoder)
+                        , Browser.Events.onMouseUp (Decode.map (.clientPos >> UserEndedDrag) Mouse.eventDecoder)
+                        , Browser.Events.onAnimationFrame BrowserSentAnimationFrame
+                        ]
+                        |> Sub.map Graph
+    in
+    Sub.batch
+        [ graphSubscriptions
+        , Ports.Rete.subscriptions |> Sub.map ReteChanged
+        ]
 
 
 
