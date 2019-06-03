@@ -350,9 +350,12 @@ moveNodeTo index ( x, y ) =
 
 updateRete : ReteMsg -> Model -> Model
 updateRete msg model =
-    case msg of
+    case Debug.log "rete msg" msg of
+        Ports.Rete.Initialized args ->
+            model
+
         Ports.Rete.AddedNode args ->
-            Debug.todo "added node" <| Debug.toString args
+            model
 
         Ports.Rete.RemovedNode { id } ->
             { model
@@ -398,7 +401,7 @@ updateRete msg model =
             }
 
         Ports.Rete.AddedWme args ->
-            Debug.todo "added wme"
+            model
 
         Ports.Rete.RemovedWme { timetag } ->
             { model

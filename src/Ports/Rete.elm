@@ -24,7 +24,8 @@ underlying rete implementation.
 {-| All the different event types.
 -}
 type Msg
-    = AddedNode AddedNodeArgs
+    = Initialized InitializedArgs
+    | AddedNode AddedNodeArgs
     | RemovedNode RemovedNodeArgs
     | AddedProduction AddedProductionArgs
     | RemovedProduction RemovedProductionArgs
@@ -39,7 +40,8 @@ type Msg
 subscriptions : Sub Msg
 subscriptions =
     Sub.batch
-        [ addedNode AddedNode
+        [ initialized Initialized
+        , addedNode AddedNode
         , removedNode RemovedNode
         , addedProduction AddedProduction
         , removedProduction RemovedProduction
@@ -48,6 +50,15 @@ subscriptions =
         , addedWme AddedWme
         , removedWme RemovedWme
         ]
+
+
+port initialized : (InitializedArgs -> msg) -> Sub msg
+
+
+type alias InitializedArgs =
+    { dummyNodeId : Int
+    , dummyTokenId : Int
+    }
 
 
 port addedNode : (AddedNodeArgs -> msg) -> Sub msg
