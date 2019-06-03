@@ -5,7 +5,7 @@ import Browser.Events
 import Color
 import Debug exposing (todo)
 import Dict exposing (Dict)
-import Element exposing (Element, centerX, column, el, explain, fill, height, htmlAttribute, image, layout, maximum, padding, px, row, text, width)
+import Element exposing (Element, centerX, column, el, fill, height, htmlAttribute, layout, maximum, padding, px, row, text, width)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
@@ -150,6 +150,7 @@ type Msg
     | UserUnhoveredSymbol
     | UserActivatedEditor
     | UserLeftEditor String
+    | UserRemovedProduction Int
     | UserModifiedWme String
     | UserSubmittedWme
     | UserInsertedWme Int
@@ -240,6 +241,9 @@ update msg model =
                 Err problems ->
                     ( { model | productionEditor = BadProduction contents problems }, Cmd.none )
 
+        UserRemovedProduction id ->
+            ( model, Ports.Rete.removeProduction { id = id } )
+
         UserModifiedWme content ->
             ( { model | wmeInput = content }, Cmd.none )
 
@@ -257,13 +261,13 @@ update msg model =
                     ( model, Cmd.none )
 
         UserInsertedWme _ ->
-            ( model, Cmd.none )
+            ( model, Ports.Rete.addWme { id = 0, attribute = 0, value = 0 } )
 
-        UserRemovedWme _ ->
-            ( model, Cmd.none )
+        UserRemovedWme id ->
+            ( model, Ports.Rete.removeWme { timetag = id } )
 
-        UserDeletedWme _ ->
-            ( model, Cmd.none )
+        UserDeletedWme id ->
+            ( { model | wmes = model.wmes |> Wmes.remove id }, Cmd.none )
 
         Graph graphMsg ->
             ( model |> updateGraph graphMsg, Cmd.none )
@@ -348,7 +352,7 @@ updateRete : ReteMsg -> Model -> Model
 updateRete msg model =
     case msg of
         Ports.Rete.AddedNode args ->
-            Debug.todo "added node"
+            Debug.todo "added node" <| Debug.toString args
 
         Ports.Rete.RemovedNode { id } ->
             { model
@@ -604,7 +608,9 @@ viewWmes model =
             , id = prepSymbol wme.id
             , attribute = prepSymbol wme.attribute
             , value = prepSymbol wme.value
-            , insertionState = View.Wme.Inserted { onRemove = UserRemovedWme index }
+
+            -- , insertionState = View.Wme.Inserted { onRemove = UserRemovedWme index }
+            , insertionState = View.Wme.NotInserted { onInsert = UserInsertedWme index, onDelete = UserDeletedWme index }
             }
 
         wmeList =
