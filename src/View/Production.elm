@@ -1,14 +1,16 @@
-module View.Production exposing (view)
+module View.Production exposing (Condition, InsertionState(..), Production, Test, view)
 
-import Element exposing (Element, column, el, fill, row, text, width)
+import Element exposing (Element, column, el, fill, row, spaceEvenly, text, width)
 import Element.Background as Background
 import Element.Events as Events
+import Element.Input as Input
 import Palette
 
 
 type alias Production msg =
     { name : String
     , conditions : List (Condition msg)
+    , insertionState : InsertionState msg
     }
 
 
@@ -30,11 +32,41 @@ type alias Test msg =
     }
 
 
+type InsertionState msg
+    = Inserted { onRemove : msg }
+    | NotInserted { onInsert : msg, onDelete : msg }
+
+
 view : Production msg -> Element msg
-view { name, conditions } =
-    column []
-        [ text name
+view { name, conditions, insertionState } =
+    column [ width fill ]
+        [ row [ width fill, spaceEvenly ] [ text name, viewControls insertionState ]
         , column [] (List.map viewCondition conditions)
+        ]
+
+
+viewControls : InsertionState msg -> Element msg
+viewControls insertionState =
+    let
+        insertArgs =
+            case insertionState of
+                Inserted { onRemove } ->
+                    { label = text "=>", onPress = Just onRemove }
+
+                NotInserted { onInsert } ->
+                    { label = text "<=", onPress = Just onInsert }
+
+        deleteOnPress =
+            case insertionState of
+                Inserted _ ->
+                    Nothing
+
+                NotInserted { onDelete } ->
+                    Just onDelete
+    in
+    row []
+        [ Input.button [] insertArgs
+        , Input.button [] { label = text "X", onPress = deleteOnPress }
         ]
 
 

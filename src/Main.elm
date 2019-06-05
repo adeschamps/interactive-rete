@@ -149,7 +149,9 @@ type Msg
     | UserUnhoveredSymbol
     | UserActivatedEditor
     | UserLeftEditor String
+    | UserInsertedProduction Int
     | UserRemovedProduction Int
+    | UserDeletedProduction Int
     | UserModifiedWme String
     | UserSubmittedWme
     | UserInsertedWme Int
@@ -228,38 +230,30 @@ update msg model =
             ( { model | productionEditor = Editing initialText }, Cmd.none )
 
         UserLeftEditor contents ->
-            case Parser.run (Production.parser 0 "P") contents of
+            let
+                nextId =
+                    model.productions |> Dict.keys |> List.maximum |> Maybe.map ((+) 1) |> Maybe.withDefault 0
+            in
+            case Parser.run (Production.parser nextId "P") contents of
                 Ok production ->
-                    let
-                        outputCondition condition =
-                            { id = outputTest condition.id
-                            , attribute = outputTest condition.attribute
-                            , value = outputTest condition.value
-                            }
-
-                        outputTest test =
-                            case test of
-                                Production.ConstantTest value ->
-                                    value
-
-                                Production.VariableTest name ->
-                                    "<" ++ name ++ ">"
-                    in
                     ( { model
                         | productions = model.productions |> Dict.insert production.id production
                         , productionEditor = NotEditing
                       }
-                    , Ports.Rete.addProduction
-                        { id = production.id
-                        , conditions = production.conditions |> List.map outputCondition
-                        }
+                    , outputProduction production
                     )
 
                 Err problems ->
                     ( { model | productionEditor = BadProduction contents problems }, Cmd.none )
 
+        UserInsertedProduction id ->
+            ( model, model.productions |> Dict.get id |> Maybe.map outputProduction |> Maybe.withDefault Cmd.none )
+
         UserRemovedProduction id ->
             ( model, Ports.Rete.removeProduction { id = id } )
+
+        UserDeletedProduction id ->
+            ( { model | productions = model.productions |> Dict.remove id }, Cmd.none )
 
         UserModifiedWme content ->
             ( { model | wmeInput = content }, Cmd.none )
@@ -301,6 +295,16 @@ updateGraph msg model =
                 ( newState, list ) =
                     Graph.nodes model.network
                         |> List.map .label
+                        -- |> List.map
+                        --     (\node ->
+                        --         case node.value of
+                        --             "Alpha" ->
+                        --                 { node | vx = node.vx + 1 }
+                        --             "Beta (root)" ->
+                        --                 { node | vy = node.vy - 1 }
+                        --             _ ->
+                        --                 node
+                        --     )
                         |> Force.tick model.networkSimulation
 
                 updateContextWithValue ctx value =
@@ -406,12 +410,8 @@ updateRete msg model =
             }
 
         Ports.Rete.AddedProduction { id, pNodeId } ->
-            let
-                production =
-                    { id = id, name = "name", conditions = [] }
-            in
             { model
-                | productions = model.productions |> Dict.insert production.id production
+                | productions = model.productions |> Dict.update id (Maybe.map (\p -> { p | inRete = Just pNodeId }))
             }
 
         Ports.Rete.RemovedProduction { id } ->
@@ -713,6 +713,7 @@ viewWmes model =
 viewProductions : Model -> Element Msg
 viewProductions model =
     let
+        toViewModel : Production -> View.Production.Production Msg
         toViewModel production =
             let
                 prepCondition { id, attribute, value } =
@@ -760,15 +761,31 @@ viewProductions model =
             in
             { name = production.name
             , conditions = production.conditions |> List.map prepCondition
+            , insertionState =
+                case production.inRete of
+                    Just _ ->
+                        View.Production.Inserted
+                            { onRemove = UserRemovedProduction production.id
+                            }
+
+                    Nothing ->
+                        View.Production.NotInserted
+                            { onInsert = UserInsertedProduction production.id
+                            , onDelete = UserDeletedProduction production.id
+                            }
             }
     in
     case model.productionEditor of
         NotEditing ->
-            column [ width fill, Events.onClick UserActivatedEditor ]
-                (model.productions
-                    |> Dict.values
-                    |> List.map (toViewModel >> View.Production.view)
-                )
+            column [ width fill ]
+                [ Input.button []
+                    { label = text "Add Production", onPress = Just UserActivatedEditor }
+                , column [ width fill ]
+                    (model.productions
+                        |> Dict.values
+                        |> List.map (toViewModel >> View.Production.view)
+                    )
+                ]
 
         Editing contents ->
             viewProductionEditor contents
@@ -823,3 +840,26 @@ assumes that the ids will never reach that number.
 alphaNodeId : Int -> Int
 alphaNodeId id =
     id + 10000
+
+
+outputProduction : Production -> Cmd msg
+outputProduction production =
+    let
+        outputCondition condition =
+            { id = outputTest condition.id
+            , attribute = outputTest condition.attribute
+            , value = outputTest condition.value
+            }
+
+        outputTest test =
+            case test of
+                Production.ConstantTest value ->
+                    value
+
+                Production.VariableTest name ->
+                    "<" ++ name ++ ">"
+    in
+    Ports.Rete.addProduction
+        { id = production.id
+        , conditions = production.conditions |> List.map outputCondition
+        }

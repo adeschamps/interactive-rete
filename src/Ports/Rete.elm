@@ -56,6 +56,8 @@ subscriptions =
         ]
 
 
+{-| Sent when the rete is initialized or reset.
+-}
 port initialized : (InitializedArgs -> msg) -> Sub msg
 
 
@@ -65,6 +67,8 @@ type alias InitializedArgs =
     }
 
 
+{-| Sent when a node is inserted into the beta network.
+-}
 port addedNode : (AddedNodeArgs -> msg) -> Sub msg
 
 
@@ -77,6 +81,8 @@ type alias AddedNodeArgs =
     }
 
 
+{-| Sent when a node is removed from the beta network.
+-}
 port removedNode : (RemovedNodeArgs -> msg) -> Sub msg
 
 

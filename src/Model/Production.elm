@@ -8,6 +8,7 @@ type alias Production =
     { id : Int
     , name : String
     , conditions : List Condition
+    , inRete : Maybe Int
     }
 
 
@@ -37,7 +38,7 @@ parser id name =
         , item = condition
         , trailing = Parser.Optional
         }
-        |> Parser.map (\conditions -> { id = id, name = name, conditions = conditions })
+        |> Parser.map (\conditions -> { id = id, name = name, conditions = conditions, inRete = Nothing })
 
 
 condition : Parser Condition
@@ -109,13 +110,16 @@ testData =
     [ { id = 1
       , name = "P1"
       , conditions = [ c1, c2, c3 ]
+      , inRete = Nothing
       }
     , { id = 2
       , name = "P2"
       , conditions = [ c1, c2, c4, c5 ]
+      , inRete = Nothing
       }
     , { id = 3
       , name = "P3"
       , conditions = [ c1, c2, c4, c3 ]
+      , inRete = Nothing
       }
     ]

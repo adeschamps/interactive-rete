@@ -53,9 +53,6 @@ async function run() {
     args.conditions.forEach(condition => {
       production.add_condition(new Condition(condition.id, condition.attribute, condition.value));
     });
-    // const production = args.conditions.reduce((prod, condition) => 
-    //   prod.add_condition(new Condition(condition.id, condition.attribute, condition.value)),
-    //   new Production(args.id));
     console.log('add production', production);
     rete.add_production(production);
   });
