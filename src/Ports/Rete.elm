@@ -33,6 +33,8 @@ type Msg
     | RemovedToken RemovedTokenArgs
     | AddedWme AddedWmeArgs
     | RemovedWme RemovedWmeArgs
+    | AddedAlphaMemory AddedAlphaMemoryArgs
+    | RemovedAlphaMemory RemovedAlphaMemoryArgs
 
 
 {-| Subscribe to all the different event types.
@@ -49,6 +51,8 @@ subscriptions =
         , removedToken RemovedToken
         , addedWme AddedWme
         , removedWme RemovedWme
+        , addedAlphaMemory AddedAlphaMemory
+        , removedAlphaMemory RemovedAlphaMemory
         ]
 
 
@@ -86,7 +90,8 @@ port addedProduction : (AddedProductionArgs -> msg) -> Sub msg
 
 type alias AddedProductionArgs =
     { id : Int
-    , name : String
+
+    -- , name : String
     , pNodeId : Int
     }
 
@@ -137,6 +142,22 @@ type alias RemovedWmeArgs =
     }
 
 
+port addedAlphaMemory : (AddedAlphaMemoryArgs -> msg) -> Sub msg
+
+
+type alias AddedAlphaMemoryArgs =
+    { id : Int
+    }
+
+
+port removedAlphaMemory : (RemovedAlphaMemoryArgs -> msg) -> Sub msg
+
+
+type alias RemovedAlphaMemoryArgs =
+    { id : Int
+    }
+
+
 
 ------ OUTGOING ------
 
@@ -145,7 +166,15 @@ port addProduction : AddProductionArgs -> Cmd msg
 
 
 type alias AddProductionArgs =
-    { name : String
+    { id : Int
+    , conditions : List Condition
+    }
+
+
+type alias Condition =
+    { id : String
+    , attribute : String
+    , value : String
     }
 
 
@@ -161,9 +190,9 @@ port addWme : AddWmeArgs -> Cmd msg
 
 
 type alias AddWmeArgs =
-    { id : Int
-    , attribute : Int
-    , value : Int
+    { id : String
+    , attribute : String
+    , value : String
     }
 
 

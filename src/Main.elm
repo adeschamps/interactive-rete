@@ -2,12 +2,11 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
 import Browser.Events
-import Color
+import Color exposing (Color)
 import Debug exposing (todo)
 import Dict exposing (Dict)
 import Element exposing (Element, centerX, column, el, fill, height, htmlAttribute, layout, maximum, padding, px, row, text, width)
 import Element.Background as Background
-import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input exposing (labelHidden, placeholder)
@@ -15,6 +14,7 @@ import Force
 import Graph exposing (Edge, Graph, Node, NodeContext, NodeId)
 import Html.Events.Extra exposing (onEnter)
 import Html.Events.Extra.Mouse as Mouse
+import IntDict
 import Json.Decode as Decode
 import Model.Production as Production exposing (Production, Test)
 import Model.Rete as Rete exposing (Rete)
@@ -91,8 +91,10 @@ init =
       , wmeInput = ""
       , wmes = Wme.testData |> List.foldl Wmes.add Wmes.empty
       , rete = Rete.empty
-      , network = initGraph
-      , networkSimulation = initForces
+
+      --   , network = initGraph
+      , network = Graph.empty
+      , networkSimulation = initForces Graph.empty
       , drag = Nothing
       }
     , Cmd.none
@@ -112,12 +114,9 @@ initGraph =
     Rete.empty.network |> Graph.mapContexts makeNode
 
 
-initForces : Force.State NodeId
-initForces =
+initForces : Graph Entity () -> Force.State NodeId
+initForces graph =
     let
-        graph =
-            initGraph
-
         w =
             800
 
@@ -231,11 +230,29 @@ update msg model =
         UserLeftEditor contents ->
             case Parser.run (Production.parser 0 "P") contents of
                 Ok production ->
+                    let
+                        outputCondition condition =
+                            { id = outputTest condition.id
+                            , attribute = outputTest condition.attribute
+                            , value = outputTest condition.value
+                            }
+
+                        outputTest test =
+                            case test of
+                                Production.ConstantTest value ->
+                                    value
+
+                                Production.VariableTest name ->
+                                    "<" ++ name ++ ">"
+                    in
                     ( { model
                         | productions = model.productions |> Dict.insert production.id production
                         , productionEditor = NotEditing
                       }
-                    , Ports.Rete.addProduction { name = production.name }
+                    , Ports.Rete.addProduction
+                        { id = production.id
+                        , conditions = production.conditions |> List.map outputCondition
+                        }
                     )
 
                 Err problems ->
@@ -261,7 +278,7 @@ update msg model =
                     ( model, Cmd.none )
 
         UserInsertedWme _ ->
-            ( model, Ports.Rete.addWme { id = 0, attribute = 0, value = 0 } )
+            ( model, Ports.Rete.addWme { id = "", attribute = "", value = "" } )
 
         UserRemovedWme id ->
             ( model, Ports.Rete.removeWme { timetag = id } )
@@ -352,20 +369,46 @@ updateRete : ReteMsg -> Model -> Model
 updateRete msg model =
     case Debug.log "rete msg" msg of
         Ports.Rete.Initialized args ->
-            model
+            { model
+                | network =
+                    Graph.empty
+                        |> Graph.insert
+                            { node = Node args.dummyNodeId <| Force.entity args.dummyNodeId "Beta (root)"
+                            , incoming = IntDict.empty
+                            , outgoing = IntDict.empty
+                            }
+            }
 
         Ports.Rete.AddedNode args ->
-            model
+            let
+                withAlphaNodeIfPresent =
+                    case args.alphaNodeId of
+                        Just alphaId ->
+                            IntDict.insert (alphaNodeId alphaId) ()
+
+                        Nothing ->
+                            identity
+
+                node =
+                    { node = Node args.id <| Force.entity args.id args.kind
+                    , incoming = IntDict.singleton args.parentId () |> withAlphaNodeIfPresent
+                    , outgoing = args.children |> List.map (\i -> ( i, () )) |> IntDict.fromList
+                    }
+            in
+            { model
+                | network = model.network |> Graph.insert node
+            }
+                |> updateForces
 
         Ports.Rete.RemovedNode { id } ->
             { model
                 | network = model.network |> Graph.remove id
             }
 
-        Ports.Rete.AddedProduction { id, name, pNodeId } ->
+        Ports.Rete.AddedProduction { id, pNodeId } ->
             let
                 production =
-                    { id = id, name = name, conditions = [] }
+                    { id = id, name = "name", conditions = [] }
             in
             { model
                 | productions = model.productions |> Dict.insert production.id production
@@ -407,6 +450,29 @@ updateRete msg model =
             { model
                 | wmes = model.wmes |> Wmes.remove timetag
             }
+
+        Ports.Rete.AddedAlphaMemory { id } ->
+            let
+                node =
+                    { node = Node (alphaNodeId id) <| Force.entity (alphaNodeId id) "Alpha"
+                    , incoming = IntDict.empty
+                    , outgoing = IntDict.empty
+                    }
+            in
+            { model
+                | network = model.network |> Graph.insert node
+            }
+                |> updateForces
+
+        Ports.Rete.RemovedAlphaMemory { id } ->
+            { model
+                | network = model.network |> Graph.remove (alphaNodeId id)
+            }
+
+
+updateForces : Model -> Model
+updateForces model =
+    { model | networkSimulation = initForces model.network }
 
 
 
@@ -496,13 +562,31 @@ viewGraph network =
         onMouseDown index =
             Mouse.onDown (.clientPos >> UserBeganDrag index >> Graph)
 
+        nodeColor : Node Entity -> Color
+        nodeColor node =
+            case node.label.value of
+                "Alpha" ->
+                    Color.yellow
+
+                "Beta" ->
+                    Color.purple
+
+                "Join" ->
+                    Color.green
+
+                "P" ->
+                    Color.gray
+
+                _ ->
+                    Color.black
+
         nodeElement : Node Entity -> Svg Msg
         nodeElement node =
             Svg.circle
-                [ r 2.5
-                , SvgAttr.fill (Fill Color.black)
+                [ r 5
+                , SvgAttr.fill (Fill (nodeColor node))
                 , stroke (Color.rgba 0 0 0 1)
-                , strokeWidth 7
+                , strokeWidth 1
                 , onMouseDown node.id
                 , cx node.label.x
                 , cy node.label.y
@@ -723,3 +807,19 @@ main =
         , update = update
         , subscriptions = subscriptions
         }
+
+
+
+---- HELPERS ----
+
+
+{-| Alpha nodes and beta network nodes have separate id spaces, so if
+we simply put them both in the same graph then we would have
+collisions. A possible solution would be to make all alpha nodes
+negative, but the default node position for non-positive values causes
+issues. Adding a positive constant to the node id works okay, but it
+assumes that the ids will never reach that number.
+-}
+alphaNodeId : Int -> Int
+alphaNodeId id =
+    id + 10000
