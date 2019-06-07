@@ -27,7 +27,7 @@ import Ports.Rete
 import Time
 import TypedSvg as Svg exposing (svg)
 import TypedSvg.Attributes as SvgAttr exposing (class, stroke, viewBox)
-import TypedSvg.Attributes.InPx exposing (cx, cy, r, strokeWidth, x1, x2, y1, y2)
+import TypedSvg.Attributes.InPx as InPx exposing (cx, cy, r, strokeWidth, x1, x2, y1, y2)
 import TypedSvg.Core exposing (Svg)
 import TypedSvg.Types exposing (Fill(..))
 import View.Production
@@ -558,40 +558,6 @@ viewGraph network =
                 , stroke (Color.rgb 0 0 0)
                 ]
                 []
-
-        onMouseDown index =
-            Mouse.onDown (.clientPos >> UserBeganDrag index >> Graph)
-
-        nodeColor : Node Entity -> Color
-        nodeColor node =
-            case node.label.value of
-                "Alpha" ->
-                    Color.yellow
-
-                "Beta" ->
-                    Color.purple
-
-                "Join" ->
-                    Color.green
-
-                "P" ->
-                    Color.gray
-
-                _ ->
-                    Color.black
-
-        nodeElement : Node Entity -> Svg Msg
-        nodeElement node =
-            Svg.circle
-                [ r 5
-                , SvgAttr.fill (Fill (nodeColor node))
-                , stroke (Color.rgba 0 0 0 1)
-                , strokeWidth 1
-                , onMouseDown node.id
-                , cx node.label.x
-                , cy node.label.y
-                ]
-                [ Svg.title [] [ TypedSvg.Core.text node.label.value ] ]
     in
     el [ width fill ] <|
         Element.html <|
@@ -605,8 +571,69 @@ viewGraph network =
                 ]
 
 
+nodeElement : Node Entity -> Svg Msg
+nodeElement node =
+    let
+        onMouseDown index =
+            Mouse.onDown (.clientPos >> UserBeganDrag index >> Graph)
 
--- image [ width fill, centerX ] { src = "/logo.svg", description = "The Elm Logo" }
+        nodeColor =
+            case node.label.value of
+                "Alpha" ->
+                    Color.yellow
+
+                "Beta" ->
+                    Color.lightPurple
+
+                "Join" ->
+                    Color.green
+
+                "P" ->
+                    Color.gray
+
+                _ ->
+                    Color.black
+
+        nodeRadius =
+            case node.label.value of
+                "Join" ->
+                    5
+
+                _ ->
+                    10
+
+        values =
+            [ Svg.title [] [ TypedSvg.Core.text (node.label.value ++ " " ++ String.fromInt node.id) ] ]
+    in
+    case node.label.value of
+        "Alpha" ->
+            let
+                size =
+                    20
+            in
+            Svg.rect
+                [ SvgAttr.fill (Fill nodeColor)
+                , stroke Color.black
+                , strokeWidth 1
+                , onMouseDown node.id
+                , InPx.x <| node.label.x - (size / 2)
+                , InPx.y <| node.label.y - (size / 2)
+                , InPx.width size
+                , InPx.height size
+                ]
+                values
+
+        _ ->
+            Svg.circle
+                [ r nodeRadius
+                , SvgAttr.fill (Fill nodeColor)
+                , stroke (Color.rgba 0 0 0 1)
+                , strokeWidth 1
+                , onMouseDown node.id
+                , cx node.label.x
+                , cy node.label.y
+                ]
+                values
 
 
 viewControls : Model -> Element Msg
