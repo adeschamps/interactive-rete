@@ -127,9 +127,9 @@ initForces graph =
             ( from, to )
 
         forces =
-            [ Force.links <| List.map link <| Graph.edges graph
+            [ Force.center (w / 2) (h / 2)
+            , Force.links <| List.map link <| Graph.edges graph
             , Force.manyBody <| List.map .id <| Graph.nodes graph
-            , Force.center (w / 2) (h / 2)
             ]
     in
     Force.simulation forces |> Force.iterations 100
@@ -393,8 +393,25 @@ updateRete msg model =
                         Nothing ->
                             identity
 
+                ( x, y ) =
+                    model.network
+                        |> Graph.get args.parentId
+                        |> Maybe.map (.node >> .label)
+                        |> Maybe.map (\parent -> ( parent.x, parent.y + 30 ))
+                        |> Maybe.withDefault ( 0, 0 )
+
+                entity : Entity
+                entity =
+                    { id = args.id
+                    , value = args.kind
+                    , x = x
+                    , y = y
+                    , vx = 0
+                    , vy = 0
+                    }
+
                 node =
-                    { node = Node args.id <| Force.entity args.id args.kind
+                    { node = Node entity.id entity
                     , incoming = IntDict.singleton args.parentId () |> withAlphaNodeIfPresent
                     , outgoing = args.children |> List.map (\i -> ( i, () )) |> IntDict.fromList
                     }
@@ -453,8 +470,22 @@ updateRete msg model =
 
         Ports.Rete.AddedAlphaMemory { id } ->
             let
+                ( x, y ) =
+                    model.network
+                        |> Graph.fold (\ctx ( currentX, currentY ) -> ( max currentX ctx.node.label.x, min currentY ctx.node.label.y )) ( 0, 1000 )
+                        |> (\( maxX, minY ) -> ( maxX + 30, minY - 30 ))
+
+                entity =
+                    { id = alphaNodeId id
+                    , value = "Alpha"
+                    , x = x
+                    , y = y
+                    , vx = 0
+                    , vy = 0
+                    }
+
                 node =
-                    { node = Node (alphaNodeId id) <| Force.entity (alphaNodeId id) "Alpha"
+                    { node = Node entity.id entity
                     , incoming = IntDict.empty
                     , outgoing = IntDict.empty
                     }
