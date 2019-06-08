@@ -1,0 +1,3 @@
+[submodule "rete"]
+	path = rete
+	url = https://github.com/adeschamps/rete
