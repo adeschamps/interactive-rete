@@ -673,9 +673,9 @@ nodeElement node =
 viewControls : Model -> Element Msg
 viewControls model =
     column [ height fill, width (px 300) ]
-        [ viewSection "Symbols" <| viewSymbols model
-        , viewSection "WMEs" <| viewWmes model
+        [ viewSection "WMEs" <| viewWmes model
         , viewSection "Productions" <| viewProductions model
+        , viewSection "Symbols" <| viewSymbols model
         , viewSection "Debug" <| viewDebug model
         ]
 
@@ -692,11 +692,9 @@ viewSymbols : Model -> Element Msg
 viewSymbols model =
     let
         symbols =
-            [ { name = "superstate" }
-            , { name = "S1" }
-            , { name = "O1" }
-            , { name = "nil" }
-            ]
+            model.symbols
+                |> Symbols.toList
+                |> List.map (\( _, name ) -> { name = name })
 
         viewSymbol symbol =
             Element.text symbol.name

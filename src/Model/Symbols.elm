@@ -1,7 +1,7 @@
 module Model.Symbols exposing
     ( Symbols
     , new
-    , id, value
+    , id, value, toList
     , add
     , Generator, step, genId, constant, map, map2, map3, andThen
     )
@@ -23,7 +23,7 @@ correspond to are kept track of by this module.
 
 # Query
 
-@docs id, value
+@docs id, value, toList
 
 
 # Transform
@@ -80,6 +80,13 @@ id value_ (Symbols { ids }) =
 value : Int -> Symbols -> Maybe String
 value id_ (Symbols { values }) =
     values |> Dict.get id_
+
+
+{-| Get a list of all the ID and symbol pairs.
+-}
+toList : Symbols -> List ( Int, String )
+toList (Symbols { values }) =
+    values |> Dict.toList
 
 
 {-| Add a symbol to the registry. This is idempotent.
