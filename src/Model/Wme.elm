@@ -1,6 +1,6 @@
 module Model.Wme exposing (Wme, parser, symbolGenerator, testData)
 
-import Model.Symbols as Symbols exposing (Symbols)
+import Model.Symbols as Symbols
 import Parser exposing ((|.), (|=), Parser, spaces, succeed, symbol)
 import Ports.Rete exposing (AddWmeArgs)
 import Set

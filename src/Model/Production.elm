@@ -1,6 +1,6 @@
 module Model.Production exposing (Condition, Production, Test(..), parser, symbolGenerator, testData)
 
-import Model.Symbols as Symbols exposing (Symbols)
+import Model.Symbols as Symbols
 import Parser exposing ((|.), (|=), Parser, spaces, succeed, symbol)
 import Ports.Rete exposing (AddProductionArgs)
 import Set

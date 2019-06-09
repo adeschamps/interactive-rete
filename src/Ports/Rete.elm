@@ -153,7 +153,11 @@ port addedAlphaMemory : (AddedAlphaMemoryArgs -> msg) -> Sub msg
 
 type alias AddedAlphaMemoryArgs =
     { id : Int
-    , test : { id : Maybe Int, attribute : Maybe Int, value : Maybe Int }
+    , test :
+        { id : Maybe Int
+        , attribute : Maybe Int
+        , value : Maybe Int
+        }
     }
 
 

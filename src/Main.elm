@@ -2,7 +2,7 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
 import Browser.Events
-import Color exposing (Color)
+import Color
 import Debug exposing (todo)
 import Dict exposing (Dict)
 import Element exposing (Element, centerX, column, el, fill, height, htmlAttribute, layout, maximum, padding, px, row, text, width)
@@ -19,7 +19,7 @@ import Json.Decode as Decode
 import Model.Production as Production exposing (Production, Test)
 import Model.Rete as Rete exposing (Rete)
 import Model.Symbols as Symbols exposing (Symbols)
-import Model.Wme as Wme exposing (Wme)
+import Model.Wme as Wme
 import Model.Wmes as Wmes exposing (Wmes)
 import Palette
 import Parser
@@ -91,27 +91,12 @@ init =
       , wmeInput = ""
       , wmes = Wme.testData |> List.foldl Wmes.add Wmes.empty
       , rete = Rete.empty
-
-      --   , network = initGraph
       , network = Graph.empty
       , networkSimulation = initForces Graph.empty
       , drag = Nothing
       }
     , Cmd.none
     )
-
-
-initGraph : Graph Entity ()
-initGraph =
-    let
-        makeNode : Graph.NodeContext Rete.Node e -> Graph.NodeContext Entity e
-        makeNode ctx =
-            { node = Node ctx.node.id <| Force.entity ctx.node.id (Debug.toString ctx.node.label)
-            , incoming = ctx.incoming
-            , outgoing = ctx.outgoing
-            }
-    in
-    Rete.empty.network |> Graph.mapContexts makeNode
 
 
 initForces : Graph Entity () -> Force.State NodeId
