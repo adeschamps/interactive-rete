@@ -132,7 +132,7 @@ initForces graph =
             , Force.manyBody <| List.map .id <| Graph.nodes graph
             ]
     in
-    Force.simulation forces |> Force.iterations 100
+    Force.simulation forces
 
 
 
