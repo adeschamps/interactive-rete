@@ -371,7 +371,7 @@ moveNodeTo index ( x, y ) =
 
 updateRete : ReteMsg -> Model -> Model
 updateRete msg model =
-    case Debug.log "rete msg" msg of
+    case msg of
         Ports.Rete.Initialized args ->
             { model
                 | network =
