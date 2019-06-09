@@ -433,7 +433,7 @@ updateRete msg model =
 
         Ports.Rete.RemovedProduction { id } ->
             { model
-                | productions = model.productions |> Dict.remove id
+                | productions = model.productions |> Dict.update id (Maybe.map (\p -> { p | inRete = Nothing }))
             }
 
         Ports.Rete.AddedToken { id, parentId, wmeTimetag, betaNodeId } ->
