@@ -1,6 +1,6 @@
 port module Ports.Rete exposing
     ( Msg(..), subscriptions
-    , addProduction, removeProduction, addWme, removeWme
+    , addProduction, AddProductionArgs, removeProduction, RemoveProductionArgs, addWme, AddWmeArgs, removeWme, RemoveWmeArgs
     )
 
 {-| This module defines the interface for interacting with the
@@ -14,7 +14,7 @@ underlying rete implementation.
 
 # Outgoing
 
-@docs addProduction, removeProduction, addWme, removeWme
+@docs addProduction, AddProductionArgs, removeProduction, RemoveProductionArgs, addWme, AddWmeArgs, removeWme, RemoveWmeArgs
 
 -}
 
@@ -179,9 +179,15 @@ type alias AddProductionArgs =
 
 
 type alias Condition =
-    { id : String
-    , attribute : String
-    , value : String
+    { id : Test
+    , attribute : Test
+    , value : Test
+    }
+
+
+type alias Test =
+    { symbol : Int
+    , isVariable : Bool
     }
 
 
@@ -197,9 +203,9 @@ port addWme : AddWmeArgs -> Cmd msg
 
 
 type alias AddWmeArgs =
-    { id : String
-    , attribute : String
-    , value : String
+    { id : Int
+    , attribute : Int
+    , value : Int
     }
 
 

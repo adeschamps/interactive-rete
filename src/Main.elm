@@ -240,14 +240,23 @@ update msg model =
                         | productions = model.productions |> Dict.insert production.id production
                         , productionEditor = NotEditing
                       }
-                    , outputProduction production
+                    , Cmd.none
                     )
 
                 Err problems ->
                     ( { model | productionEditor = BadProduction contents problems }, Cmd.none )
 
         UserInsertedProduction id ->
-            ( model, model.productions |> Dict.get id |> Maybe.map outputProduction |> Maybe.withDefault Cmd.none )
+            case model.productions |> Dict.get id of
+                Just production ->
+                    let
+                        ( args, symbols ) =
+                            model.symbols |> Symbols.step (Production.symbolGenerator production)
+                    in
+                    ( { model | symbols = symbols }, Ports.Rete.addProduction args )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         UserRemovedProduction id ->
             ( model, Ports.Rete.removeProduction { id = id } )
@@ -271,8 +280,17 @@ update msg model =
                 Err _ ->
                     ( model, Cmd.none )
 
-        UserInsertedWme _ ->
-            ( model, Ports.Rete.addWme { id = "", attribute = "", value = "" } )
+        UserInsertedWme id ->
+            case model.wmes |> Wmes.get id of
+                Just wme ->
+                    let
+                        ( args, symbols ) =
+                            model.symbols |> Symbols.step (Wme.symbolGenerator wme)
+                    in
+                    ( { model | symbols = symbols }, Ports.Rete.addWme args )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         UserRemovedWme id ->
             ( model, Ports.Rete.removeWme { timetag = id } )
@@ -898,26 +916,3 @@ assumes that the ids will never reach that number.
 alphaNodeId : Int -> Int
 alphaNodeId id =
     id + 10000
-
-
-outputProduction : Production -> Cmd msg
-outputProduction production =
-    let
-        outputCondition condition =
-            { id = outputTest condition.id
-            , attribute = outputTest condition.attribute
-            , value = outputTest condition.value
-            }
-
-        outputTest test =
-            case test of
-                Production.ConstantTest value ->
-                    value
-
-                Production.VariableTest name ->
-                    "<" ++ name ++ ">"
-    in
-    Ports.Rete.addProduction
-        { id = production.id
-        , conditions = production.conditions |> List.map outputCondition
-        }

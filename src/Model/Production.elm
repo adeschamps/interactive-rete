@@ -1,6 +1,8 @@
-module Model.Production exposing (Condition, Production, Test(..), parser, testData)
+module Model.Production exposing (Condition, Production, Test(..), parser, symbolGenerator, testData)
 
+import Model.Symbols as Symbols exposing (Symbols)
 import Parser exposing ((|.), (|=), Parser, spaces, succeed, symbol)
+import Ports.Rete exposing (AddProductionArgs)
 import Set
 
 
@@ -66,6 +68,38 @@ test =
             succeed ConstantTest |= Parser.variable { start = always True, inner = \c -> Char.isAlpha c || c == '-', reserved = Set.empty }
     in
     Parser.oneOf [ variableTest, constantTest ]
+
+
+
+---- SYMBOL GENERATION ----
+
+
+symbolGenerator : Production -> Symbols.Generator AddProductionArgs
+symbolGenerator production =
+    let
+        genTest test_ =
+            case test_ of
+                VariableTest _ ->
+                    Symbols.constant { symbol = -1, isVariable = True }
+
+                ConstantTest value ->
+                    Symbols.genId value |> Symbols.map (\symbol -> { symbol = symbol, isVariable = False })
+
+        genCondition cond =
+            Symbols.map3 (\a b c -> { id = a, attribute = b, value = c })
+                (genTest cond.id)
+                (genTest cond.attribute)
+                (genTest cond.value)
+    in
+    production.conditions
+        |> List.foldr
+            (genCondition >> Symbols.map2 (::))
+            (Symbols.constant [])
+        |> Symbols.map (\conditions -> { id = production.id, conditions = conditions })
+
+
+
+---- TEST DATA ----
 
 
 testData : List Production

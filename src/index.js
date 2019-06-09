@@ -1,7 +1,7 @@
 import './main.css';
 import { Elm } from './Main.elm';
 import registerServiceWorker from './registerServiceWorker';
-import { Rete, default as init, Production, Condition } from 'rete';
+import { Rete, default as init, Production, Condition, Test } from 'rete';
 
 var app;
 var rete;
@@ -51,7 +51,10 @@ async function run() {
     console.log('add production', args);
     var production = new Production(args.id);
     args.conditions.forEach(condition => {
-      production.add_condition(new Condition(condition.id, condition.attribute, condition.value));
+      production.add_condition(new Condition(
+        new Test(condition.id.symbol, condition.id.isVariable),
+        new Test(condition.attribute.symbol, condition.attribute.isVariable),
+        new Test(condition.value.symbol, condition.attribute.isVariable)));
     });
     console.log('add production', production);
     rete.add_production(production);

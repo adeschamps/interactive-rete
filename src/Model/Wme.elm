@@ -1,6 +1,8 @@
-module Model.Wme exposing (Wme, parser, testData)
+module Model.Wme exposing (Wme, parser, symbolGenerator, testData)
 
+import Model.Symbols as Symbols exposing (Symbols)
 import Parser exposing ((|.), (|=), Parser, spaces, succeed, symbol)
+import Ports.Rete exposing (AddWmeArgs)
 import Set
 
 
@@ -47,3 +49,15 @@ testData =
     , Wme "b3" "on" "table"
     , Wme "b3" "color" "red"
     ]
+
+
+
+---- SYMBOL GENERATION ----
+
+
+symbolGenerator : Wme -> Symbols.Generator AddWmeArgs
+symbolGenerator wme =
+    Symbols.map3 AddWmeArgs
+        (Symbols.genId wme.id)
+        (Symbols.genId wme.attribute)
+        (Symbols.genId wme.value)
