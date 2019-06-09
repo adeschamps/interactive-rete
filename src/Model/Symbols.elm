@@ -73,14 +73,13 @@ value id_ (Symbols { values }) =
 -}
 add : String -> Symbols -> Symbols
 add value_ (Symbols model) =
-    case Dict.get value_ model.ids of
-        Just _ ->
-            Symbols model
+    if Dict.member value_ model.ids then
+        Symbols model
 
-        Nothing ->
-            Symbols
-                { model
-                    | ids = model.ids |> Dict.insert value_ model.counter
-                    , values = model.values |> Dict.insert model.counter value_
-                    , counter = model.counter + 1
-                }
+    else
+        Symbols
+            { model
+                | ids = model.ids |> Dict.insert value_ model.counter
+                , values = model.values |> Dict.insert model.counter value_
+                , counter = model.counter + 1
+            }
