@@ -79,8 +79,12 @@ symbolGenerator production =
     let
         genTest test_ =
             case test_ of
-                VariableTest _ ->
-                    Symbols.constant { symbol = -1, isVariable = True }
+                VariableTest var ->
+                    -- TODO: Variables really shouldn't go in the
+                    -- symbol manager, but this is the quickest way to
+                    -- get unique and consistent IDs within a
+                    -- production.
+                    Symbols.genId ("<" ++ var ++ ">") |> Symbols.map (\symbol -> { symbol = symbol, isVariable = True })
 
                 ConstantTest value ->
                     Symbols.genId value |> Symbols.map (\symbol -> { symbol = symbol, isVariable = False })

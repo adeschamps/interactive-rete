@@ -11,18 +11,20 @@ observer.on_event = msg => {
   const event = JSON.parse(msg);
   console.info('rete event', event);
   var port = (() => { switch (event.type) {
-    case 'Initialized':        return app.ports.initialized;
-    case 'AddedNode':          return app.ports.addedNode;
-    case 'RemovedNode':        return app.ports.removedNode;
-    case 'AddedProduction':    return app.ports.addedProduction;
-    case 'RemovedProduction':  return app.ports.removedProduction;
-    case 'AddedToken':         return app.ports.addedToken;
-    case 'RemovedToken':       return app.ports.removedToken;
-    case 'AddedWme':           return app.ports.addedWme;
-    case 'RemovedWme':         return app.ports.removedWme;
-    case 'AddedAlphaMemory':   return app.ports.addedAlphaMemory;
-    case 'RemovedAlphaMemory': return app.ports.removedAlphaMemory;
-    default:                   return null;
+    case 'Initialized':         return app.ports.initialized;
+    case 'AddedNode':           return app.ports.addedNode;
+    case 'RemovedNode':         return app.ports.removedNode;
+    case 'AddedProduction':     return app.ports.addedProduction;
+    case 'RemovedProduction':   return app.ports.removedProduction;
+    case 'AddedToken':          return app.ports.addedToken;
+    case 'RemovedToken':        return app.ports.removedToken;
+    case 'AddedWme':            return app.ports.addedWme;
+    case 'RemovedWme':          return app.ports.removedWme;
+    case 'AddedAlphaMemory':    return app.ports.addedAlphaMemory;
+    case 'RemovedAlphaMemory':  return app.ports.removedAlphaMemory;
+    case 'MatchedProduction':   return app.ports.matchedProduction;
+    case 'UnmatchedProduction': return app.ports.unmatchedProduction;
+    default:                    return null;
   }})();
 
   if (port == null) {
@@ -54,7 +56,7 @@ async function run() {
       production.add_condition(new Condition(
         new Test(condition.id.symbol, condition.id.isVariable),
         new Test(condition.attribute.symbol, condition.attribute.isVariable),
-        new Test(condition.value.symbol, condition.attribute.isVariable)));
+        new Test(condition.value.symbol, condition.value.isVariable)));
     });
     console.log('add production', production);
     rete.add_production(production);

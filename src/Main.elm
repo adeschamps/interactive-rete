@@ -439,24 +439,8 @@ updateRete msg model =
                 | productions = model.productions |> Dict.update id (Maybe.map (\p -> { p | inRete = Nothing }))
             }
 
-        Ports.Rete.AddedToken { id, parentId, wmeTimetag, betaNodeId } ->
-            let
-                token =
-                    { id = id
-                    , token =
-                        { betaNode = betaNodeId
-                        , wme = Debug.todo "There are two implementations of a WME."
-
-                        -- model.wmes
-                        --     |> Wmes.get wmeTimetag
-                        --     |> Maybe.withDefault (Rete.Wme -1 -1 -1)
-                        }
-                    , parent = parentId
-                    }
-            in
-            { model
-                | rete = model.rete |> Rete.addToken token
-            }
+        Ports.Rete.AddedToken { id, parentId, nodeId } ->
+            model
 
         Ports.Rete.RemovedToken { id } ->
             { model
@@ -502,6 +486,12 @@ updateRete msg model =
             { model
                 | network = model.network |> Graph.remove (alphaNodeId id)
             }
+
+        Ports.Rete.MatchedProduction _ ->
+            model
+
+        Ports.Rete.UnmatchedProduction _ ->
+            model
 
 
 updateForces : Model -> Model

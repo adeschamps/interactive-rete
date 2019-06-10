@@ -35,6 +35,8 @@ type Msg
     | RemovedWme RemovedWmeArgs
     | AddedAlphaMemory AddedAlphaMemoryArgs
     | RemovedAlphaMemory RemovedAlphaMemoryArgs
+    | MatchedProduction MatchedProductionArgs
+    | UnmatchedProduction UnmatchedProductionArgs
 
 
 {-| Subscribe to all the different event types.
@@ -53,6 +55,8 @@ subscriptions =
         , removedWme RemovedWme
         , addedAlphaMemory AddedAlphaMemory
         , removedAlphaMemory RemovedAlphaMemory
+        , matchedProduction MatchedProduction
+        , unmatchedProduction UnmatchedProduction
         ]
 
 
@@ -116,8 +120,9 @@ port addedToken : (AddedTokenArgs -> msg) -> Sub msg
 type alias AddedTokenArgs =
     { id : Int
     , parentId : Int
-    , wmeTimetag : Int
-    , betaNodeId : Int
+    , nodeId : Int
+
+    -- , wmeTimetag : Int
     }
 
 
@@ -166,6 +171,24 @@ port removedAlphaMemory : (RemovedAlphaMemoryArgs -> msg) -> Sub msg
 
 type alias RemovedAlphaMemoryArgs =
     { id : Int
+    }
+
+
+port matchedProduction : (MatchedProductionArgs -> msg) -> Sub msg
+
+
+type alias MatchedProductionArgs =
+    { id : Int
+    , token : Int
+    }
+
+
+port unmatchedProduction : (UnmatchedProductionArgs -> msg) -> Sub msg
+
+
+type alias UnmatchedProductionArgs =
+    { id : Int
+    , token : Int
     }
 
 
