@@ -5,7 +5,7 @@ import Browser.Events
 import Color
 import Debug exposing (todo)
 import Dict exposing (Dict)
-import Element exposing (Element, centerX, column, el, fill, height, htmlAttribute, layout, maximum, padding, px, row, text, width)
+import Element exposing (Element, centerX, column, el, fill, height, htmlAttribute, layout, maximum, padding, px, row, scrollbars, text, width)
 import Element.Background as Background
 import Element.Events as Events
 import Element.Font as Font
@@ -536,18 +536,15 @@ subscriptions model =
 view : Model -> Browser.Document Msg
 view model =
     { title = "Interactive Rete"
-    , body = [ layout [ Background.color Palette.background ] <| viewPage model ]
+    , body = [ layout [ Background.color Palette.background, height fill ] <| viewPage model ]
     }
 
 
 viewPage : Model -> Element Msg
 viewPage model =
-    column [ centerX, width (fill |> maximum 1200), height fill, Background.color Palette.white ]
-        [ viewHeader
-        , row [ width fill, height fill ]
-            [ viewGraph model.network
-            , viewControls model
-            ]
+    row [ centerX, width (fill |> maximum 1200), height fill, Background.color Palette.white ]
+        [ el [ width fill, height fill ] <| viewGraph model.network
+        , el [ width (px 300), height fill, scrollbars ] <| viewControls model
         ]
 
 
@@ -583,16 +580,15 @@ viewGraph network =
                 ]
                 []
     in
-    el [ width fill ] <|
-        Element.html <|
-            svg [ viewBox 0 0 800 600 ]
-                [ Graph.edges network
-                    |> List.map (linkElement network)
-                    |> Svg.g [ class [ "links" ] ]
-                , Graph.nodes network
-                    |> List.map nodeElement
-                    |> Svg.g [ class [ "nodes" ] ]
-                ]
+    Element.html <|
+        svg [ viewBox 0 0 800 600 ]
+            [ Graph.edges network
+                |> List.map (linkElement network)
+                |> Svg.g [ class [ "links" ] ]
+            , Graph.nodes network
+                |> List.map nodeElement
+                |> Svg.g [ class [ "nodes" ] ]
+            ]
 
 
 nodeElement : Node Entity -> Svg Msg
@@ -662,7 +658,7 @@ nodeElement node =
 
 viewControls : Model -> Element Msg
 viewControls model =
-    column [ height fill, width (px 300) ]
+    column [ width fill ]
         [ viewSection "WMEs" <| viewWmes model
         , viewSection "Productions" <| viewProductions model
         , viewSection "Symbols" <| viewSymbols model
