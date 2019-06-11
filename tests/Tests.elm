@@ -1,6 +1,7 @@
 module Tests exposing (all)
 
 import Expect
+import Fuzz exposing (..)
 import Model.Production as Production
 import Model.Symbols as Symbols
 import Model.Wme as Wme
@@ -107,4 +108,22 @@ symbolsTests =
                         [ Expect.notEqual Nothing
                         , Expect.notEqual (Symbols.id "bar" symbols)
                         ]
+        , fuzz (list string) "Roundtrip" <|
+            \strings ->
+                let
+                    generator =
+                        strings
+                            |> List.foldr
+                                (Symbols.genId >> Symbols.map2 (::))
+                                (Symbols.constant [])
+
+                    ( ids, symbols ) =
+                        Symbols.new |> Symbols.step generator
+
+                    getValue id =
+                        Symbols.value id symbols
+                in
+                ids
+                    |> List.filterMap getValue
+                    |> Expect.equal strings
         ]
