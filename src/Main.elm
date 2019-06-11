@@ -819,24 +819,30 @@ viewProductions model =
                             , onDelete = UserDeletedProduction production.id
                             }
             }
+
+        editor =
+            case model.productionEditor of
+                NotEditing ->
+                    Input.button []
+                        { label = text "Add Production", onPress = Just UserActivatedEditor }
+
+                Editing contents ->
+                    viewProductionEditor contents
+
+                BadProduction contents problems ->
+                    column [ width fill ]
+                        [ viewProductionEditor contents
+                        , el [ Background.color (Element.rgb 1.0 0.5 0.5), Events.onClick UserActivatedEditor ] <| text (Debug.toString problems)
+                        ]
     in
-    case model.productionEditor of
-        NotEditing ->
-            column [ width fill ]
-                [ Input.button []
-                    { label = text "Add Production", onPress = Just UserActivatedEditor }
-                , column [ width fill ]
-                    (model.productions
-                        |> Dict.values
-                        |> List.map (toViewModel >> View.Production.view)
-                    )
-                ]
-
-        Editing contents ->
-            viewProductionEditor contents
-
-        BadProduction contents problems ->
-            el [ Background.color (Element.rgb 1.0 0.5 0.5), Events.onClick UserActivatedEditor ] <| text (Parser.deadEndsToString problems)
+    column [ width fill ]
+        [ editor
+        , column [ width fill ]
+            (model.productions
+                |> Dict.values
+                |> List.map (toViewModel >> View.Production.view)
+            )
+        ]
 
 
 viewProductionEditor : String -> Element Msg
