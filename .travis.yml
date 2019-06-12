@@ -1,1 +1,23 @@
 language: elm
+
+# Although this is an Elm project, we first have to build the Rete,
+# which is implemented in Rust and included as a submodule. If the
+# Rete itself reaches a stable state, then it might make sense to
+# package it separately, for example via GitHub releases or npm.
+before_install:
+  # Install Rust toolchain
+  - curl https://sh.rustup.rs -sSf | sh -s -- -y
+  - source $HOME/.cargo/env
+
+  # Install wasm-pack
+  - WASM_PACK_TAG=v0.8.1
+  - WASM_PACK=wasm-pack-$WASM_PACK_TAG-x86_64-unknown-linux-musl
+  - curl -OL https://github.com/rustwasm/wasm-pack/releases/download/$WASM_PACK_TAG/$WASM_PACK.tar.gz
+  - tar xf $WASM_PACK.tar.gz
+  - chmod +x $WASM_PACK/wasm-pack
+  - mv $WASM_PACK/wasm-pack* ~/.cargo/bin 
+
+  # Build rete
+  - (cd rete && wasm-pack build --target web -- --features trace)
+
+cache: cargo
