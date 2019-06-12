@@ -1,7 +1,8 @@
 language: elm
 
 before_install:
-  - curl https://sh.rustup.rs -sSf | sh
+  - curl https://sh.rustup.rs -sSf > rustup-install.sh
+  - yes | sh rustup-install.sh
   - cargo install wasm-pack
   - cd rete && wasm-pack build --target web -- --features trace
   
