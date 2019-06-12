@@ -1,1 +1,6 @@
 language: elm
+
+before_install:
+  - cargo install wasm-pack
+  - cd rete && wasm-pack build --target web -- --features trace
+  
