@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/adeschamps/interactive-rete.svg?branch=master)](https://travis-ci.com/adeschamps/interactive-rete)
+
 # Interactive Rete
 
 This is an interactive demo of the Rete pattern matching algorithm. It is a work in progress.
