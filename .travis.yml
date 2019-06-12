@@ -1,8 +1,15 @@
 language: elm
 
 before_install:
+  # Install Rust toolchain
   - curl https://sh.rustup.rs -sSf | sh -s -- -y
   - source $HOME/.cargo/env
-  - cargo install wasm-pack
+  # Install wasm-pack
+  - WASM_PACK_TAG=v0.8.1
+  - curl -OL https://github.com/rustwasm/wasm-pack/releases/download/$WASM_PACK_TAG/wasm-pack-$WASM_PACK_TAG-x86_64-unknown-linux-musl.tar.gz
+  - tar xf wasm-pack-$WASM_PACK_TAG-x86_64-unknown-linux-musl.tar.gz
+  - chmod +x wasm-pack-$WASM_PACK_TAG-x86_64-unknown-linux-musl/wasm-pack
+  - mv wasm-pack-$WASM_PACK_TAG-x86_64-unknown-linux-musl/wasm-pack* ~/.cargo/bin 
+  # Build rete
   - cd rete && wasm-pack build --target web -- --features trace
   
