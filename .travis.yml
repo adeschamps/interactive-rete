@@ -2,6 +2,7 @@ language: elm
 
 before_install:
   - curl https://sh.rustup.rs -sSf | sh -s -- -y
+  - source $HOME/.cargo/env
   - cargo install wasm-pack
   - cd rete && wasm-pack build --target web -- --features trace
   
