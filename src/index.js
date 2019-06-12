@@ -54,9 +54,9 @@ async function run() {
     var production = new Production(args.id);
     args.conditions.forEach(condition => {
       production.add_condition(new Condition(
-        new Test(condition.id.symbol, condition.id.isVariable),
-        new Test(condition.attribute.symbol, condition.attribute.isVariable),
-        new Test(condition.value.symbol, condition.value.isVariable)));
+        makeTest(condition.id),
+        makeTest(condition.attribute),
+        makeTest(condition.value)));
     });
     console.log('add production', production);
     rete.add_production(production);
@@ -79,5 +79,10 @@ async function run() {
 
 }
 run();
+
+const makeTest = test =>
+  test.isVariable
+  ? Test.variable(test.symbol)
+  : Test.symbol(test.symbol);
 
 registerServiceWorker();
