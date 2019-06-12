@@ -9,14 +9,6 @@ before_install:
   - curl https://sh.rustup.rs -sSf | sh -s -- -y
   - source $HOME/.cargo/env
 
-  # Install wasm-bindgen
-  - WASM_BINDGEN_TAG=0.2.21
-  - WASM_BINDGEN=wasm-bindgen-$WASM_BINDGEN_TAG-x86_64-unknown-linux-musl
-  - curl -OL https://github.com/rustwasm/wasm-bindgen/releases/download/$WASM_BINDGEN_TAG/$WASM_BINDGEN.tar.gz
-  - tar xf $WASM_BINDGEN.tar.gz
-  - chmod +x $WASM_BINDGEN/wasm-bindgen
-  - mv $WASM_BINDGEN/wasm-bindgen* ~/.cargo/bin 
-
   # Install wasm-pack
   - WASM_PACK_TAG=v0.8.1
   - WASM_PACK=wasm-pack-$WASM_PACK_TAG-x86_64-unknown-linux-musl
