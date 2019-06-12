@@ -19,4 +19,5 @@ before_install:
 
   # Build rete
   - (cd rete && wasm-pack build --target web -- --features trace)
-  
+
+cache: cargo
