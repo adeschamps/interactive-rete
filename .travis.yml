@@ -12,5 +12,5 @@ before_install:
   - chmod +x $WASM_PACK/wasm-pack
   - mv $WASM_PACK/wasm-pack* ~/.cargo/bin 
   # Build rete
-  - cd rete && wasm-pack build --target web -- --features trace
+  - (cd rete && wasm-pack build --target web -- --features trace)
   
