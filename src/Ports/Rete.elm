@@ -79,7 +79,6 @@ port addedNode : (AddedNodeArgs -> msg) -> Sub msg
 type alias AddedNodeArgs =
     { id : Int
     , parentId : Int
-    , children : List Int
     , kind : String
     , alphaNodeId : Maybe Int
     }

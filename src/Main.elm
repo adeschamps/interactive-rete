@@ -416,7 +416,7 @@ updateRete msg model =
                 node =
                     { node = Node entity.id entity
                     , incoming = IntDict.singleton args.parentId () |> withAlphaNodeIfPresent
-                    , outgoing = args.children |> List.map (\i -> ( i, () )) |> IntDict.fromList
+                    , outgoing = IntDict.empty
                     }
             in
             { model
