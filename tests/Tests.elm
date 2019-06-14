@@ -52,6 +52,11 @@ productions =
                                 ]
                             }
                         )
+        , test "Parse invalid production" <|
+            \_ ->
+                "<a> ^missing-parens <b>"
+                    |> Parser.run (Production.parser 0 "name")
+                    |> Expect.err
         ]
 
 

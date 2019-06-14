@@ -32,15 +32,20 @@ type Test
 
 parser : Int -> String -> Parser Production
 parser id name =
-    Parser.sequence
-        { start = ""
-        , separator = ""
-        , end = ""
-        , spaces = spaces
-        , item = condition
-        , trailing = Parser.Optional
-        }
-        |> Parser.map (\conditions -> { id = id, name = name, conditions = conditions, inRete = Nothing })
+    let
+        makeProduction conditions =
+            { id = id, name = name, conditions = conditions, inRete = Nothing }
+    in
+    succeed makeProduction
+        |= Parser.sequence
+            { start = ""
+            , separator = ""
+            , end = ""
+            , spaces = spaces
+            , item = condition
+            , trailing = Parser.Optional
+            }
+        |. Parser.end
 
 
 condition : Parser Condition
@@ -62,10 +67,22 @@ test : Parser Test
 test =
     let
         variableTest =
-            succeed VariableTest |. symbol "<" |= Parser.variable { start = always True, inner = \c -> c /= '>', reserved = Set.empty } |. symbol ">"
+            succeed VariableTest
+                |. symbol "<"
+                |= Parser.variable
+                    { start = always True
+                    , inner = \c -> c /= '>'
+                    , reserved = Set.empty
+                    }
+                |. symbol ">"
 
         constantTest =
-            succeed ConstantTest |= Parser.variable { start = always True, inner = \c -> Char.isAlpha c || c == '-', reserved = Set.empty }
+            succeed ConstantTest
+                |= Parser.variable
+                    { start = always True
+                    , inner = \c -> Char.isAlpha c || c == '-'
+                    , reserved = Set.empty
+                    }
     in
     Parser.oneOf [ variableTest, constantTest ]
 
