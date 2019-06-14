@@ -51,6 +51,7 @@ type alias Model =
     , network : Graph Entity ()
     , networkSimulation : Force.State NodeId
     , drag : Maybe Drag
+    , events : List ReteMsg
     }
 
 
@@ -94,6 +95,7 @@ init =
       , network = Graph.empty
       , networkSimulation = initForces Graph.empty
       , drag = Nothing
+      , events = []
       }
     , Cmd.none
     )
@@ -144,6 +146,7 @@ type Msg
     | UserDeletedWme Int
     | Graph GraphMsg
     | ReteChanged ReteMsg
+    | ReteUpdateTicked
 
 
 type GraphMsg
@@ -287,7 +290,15 @@ update msg model =
             ( model |> updateGraph graphMsg, Cmd.none )
 
         ReteChanged reteMsg ->
-            ( model |> updateRete reteMsg, Cmd.none )
+            ( { model | events = model.events ++ [ reteMsg ] }, Cmd.none )
+
+        ReteUpdateTicked ->
+            case model.events |> List.head of
+                Just reteMsg ->
+                    ( { model | events = model.events |> List.drop 1 } |> updateRete reteMsg, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
 
 updateGraph : GraphMsg -> Model -> Model
@@ -428,6 +439,7 @@ updateRete msg model =
             { model
                 | network = model.network |> Graph.remove id
             }
+                |> updateForces
 
         Ports.Rete.AddedProduction { id, pNodeId } ->
             { model
@@ -486,6 +498,7 @@ updateRete msg model =
             { model
                 | network = model.network |> Graph.remove (alphaNodeId id)
             }
+                |> updateForces
 
         Ports.Rete.MatchedProduction _ ->
             model
@@ -522,10 +535,18 @@ subscriptions model =
                         , Browser.Events.onAnimationFrame BrowserSentAnimationFrame
                         ]
                         |> Sub.map Graph
+
+        timelineSubscriptions =
+            if List.isEmpty model.events then
+                Sub.none
+
+            else
+                Time.every 100 (always ReteUpdateTicked)
     in
     Sub.batch
         [ graphSubscriptions
         , Ports.Rete.subscriptions |> Sub.map ReteChanged
+        , timelineSubscriptions
         ]
 
 
@@ -543,7 +564,8 @@ view model =
 viewPage : Model -> Element Msg
 viewPage model =
     row [ centerX, width (fill |> maximum 1200), height fill, Background.color Palette.white ]
-        [ el [ width fill, height fill ] <| viewGraph model.network
+        [ el [ width (px 200), height fill ] <| viewTimeline model
+        , el [ width fill, height fill ] <| viewGraph model.network
         , el [ width (px 300), height fill, scrollbars ] <| viewControls model
         ]
 
@@ -553,6 +575,40 @@ viewHeader =
     row [ width fill, padding 5, Background.color (Element.rgb 0.8 0.8 1.0) ]
         [ text "Interactive Rete"
         ]
+
+
+viewTimeline : Model -> Element Msg
+viewTimeline model =
+    let
+        viewReteEvent msg =
+            case msg of
+                Ports.Rete.Initialized _ ->
+                    text "Initialize"
+
+                Ports.Rete.AddedNode { id, kind } ->
+                    text <| "+ " ++ kind ++ " node " ++ String.fromInt id
+
+                Ports.Rete.RemovedNode { id } ->
+                    text <| "- Node " ++ String.fromInt id
+
+                Ports.Rete.AddedAlphaMemory { id } ->
+                    text <| "+ Alpha node " ++ String.fromInt id
+
+                Ports.Rete.RemovedAlphaMemory { id } ->
+                    text <| "- Alpha node " ++ String.fromInt id
+
+                Ports.Rete.AddedProduction { id } ->
+                    text <| "Added production " ++ String.fromInt id
+
+                Ports.Rete.RemovedProduction { id } ->
+                    text <| "Removed production " ++ String.fromInt id
+
+                event ->
+                    text <| Debug.toString event
+    in
+    viewSection "Timeline" <|
+        column [ width fill, scrollbars ]
+            (model.events |> List.map viewReteEvent)
 
 
 viewGraph : Graph Entity e -> Element Msg
