@@ -5,7 +5,7 @@ import Browser.Events
 import Color
 import Debug exposing (todo)
 import Dict exposing (Dict)
-import Element exposing (Element, centerX, column, el, fill, height, htmlAttribute, layout, maximum, padding, px, row, scrollbars, text, width)
+import Element exposing (Element, centerX, column, el, fill, height, htmlAttribute, layout, maximum, padding, px, row, scrollbars, spacing, text, width)
 import Element.Background as Background
 import Element.Events as Events
 import Element.Font as Font
@@ -891,9 +891,9 @@ viewProductions model =
                         , el [ Background.color (Element.rgb 1.0 0.5 0.5), Events.onClick UserActivatedEditor ] <| text (Debug.toString problems)
                         ]
     in
-    column [ width fill ]
+    column [ width fill, spacing 10 ]
         [ editor
-        , column [ width fill ]
+        , column [ width fill, spacing 10 ]
             (model.productions
                 |> Dict.values
                 |> List.map (toViewModel >> View.Production.view)
