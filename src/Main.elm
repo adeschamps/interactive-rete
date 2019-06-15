@@ -907,7 +907,7 @@ viewProductionEditor contents =
         { onChange = UserModifiedProduction
         , text = contents
         , placeholder = Just (placeholder [] <| text "Enter a production")
-        , label = labelHidden "production"
+        , label = labelHidden "Production Input"
         , spellcheck = False
         }
 
