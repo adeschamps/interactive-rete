@@ -13,10 +13,12 @@
     "rete": "file:rete/pkg"
   },
   "devDependencies": {
-    "cypress": "^3.3.1"
+    "cypress": "^3.3.1",
+    "start-server-and-test": "^1.9.1"
   },
   "scripts": {
-    "test": "elm-format --validate . && elm-test && cypress run"
+    "test": "elm-format --validate . && elm-test && cypress run",
+    "ci": "start-server-and-test 'PORT=3001 elm-app start' 3001 'npm test'"
   },
   "author": "",
   "license": "ISC"
