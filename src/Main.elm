@@ -646,7 +646,7 @@ viewTimeline model =
                 Background.color Palette.white
 
         viewReteEvent index msg =
-            el [ background index ] (text <| eventText msg)
+            el [ background index, width fill, Font.alignLeft ] (text <| String.fromInt index ++ ": " ++ eventText msg)
     in
     viewSection "Timeline" <|
         column [ width fill ]
