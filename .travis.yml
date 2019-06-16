@@ -21,6 +21,6 @@ before_install:
   - (cd rete && wasm-pack build --target web -- --features trace)
 
 script:
-  - npm ci
+  - npm run ci
 
 cache: cargo
