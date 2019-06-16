@@ -19,6 +19,7 @@ import Json.Decode as Decode
 import Model.Production as Production exposing (Production, Test)
 import Model.Rete as Rete exposing (Rete)
 import Model.Symbols as Symbols exposing (Symbols)
+import Model.Timeline as Timeline exposing (Timeline)
 import Model.Wme as Wme
 import Model.Wmes as Wmes exposing (Wmes)
 import Palette
@@ -52,6 +53,8 @@ type alias Model =
     , networkSimulation : Force.State NodeId
     , drag : Maybe Drag
     , events : List ReteMsg
+    , networkTimeline : Timeline (Graph Entity ())
+    , selectedStep : Int
     }
 
 
@@ -96,6 +99,8 @@ init =
       , networkSimulation = initForces Graph.empty
       , drag = Nothing
       , events = []
+      , networkTimeline = Timeline.init Graph.empty
+      , selectedStep = 0
       }
     , Cmd.none
     )
@@ -293,9 +298,18 @@ update msg model =
             ( { model | events = model.events ++ [ reteMsg ] }, Cmd.none )
 
         ReteUpdateTicked ->
-            case model.events |> List.head of
+            case model.events |> List.drop model.selectedStep |> List.head of
                 Just reteMsg ->
-                    ( { model | events = model.events |> List.drop 1 } |> updateRete reteMsg, Cmd.none )
+                    let
+                        newModel =
+                            updateRete reteMsg model
+                    in
+                    ( { newModel
+                        | networkTimeline = model.networkTimeline |> Timeline.step (always newModel.network)
+                        , selectedStep = model.selectedStep + 1
+                      }
+                    , Cmd.none
+                    )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -309,16 +323,6 @@ updateGraph msg model =
                 ( newState, list ) =
                     Graph.nodes model.network
                         |> List.map .label
-                        -- |> List.map
-                        --     (\node ->
-                        --         case node.value of
-                        --             "Alpha" ->
-                        --                 { node | vx = node.vx + 1 }
-                        --             "Beta (root)" ->
-                        --                 { node | vy = node.vy - 1 }
-                        --             _ ->
-                        --                 node
-                        --     )
                         |> Force.tick model.networkSimulation
 
                 updateContextWithValue ctx value =
@@ -537,7 +541,7 @@ subscriptions model =
                         |> Sub.map Graph
 
         timelineSubscriptions =
-            if List.isEmpty model.events then
+            if model.selectedStep == List.length model.events then
                 Sub.none
 
             else
@@ -564,7 +568,7 @@ view model =
 viewPage : Model -> Element Msg
 viewPage model =
     row [ centerX, width (fill |> maximum 1200), height fill, Background.color Palette.white ]
-        [ el [ width (px 200), height fill ] <| viewTimeline model
+        [ el [ width (px 200), height fill, scrollbars ] <| viewTimeline model
         , el [ width fill, height fill ] <| viewGraph model.network
         , el [ width (px 300), height fill, scrollbars ] <| viewControls model
         ]
@@ -580,35 +584,45 @@ viewHeader =
 viewTimeline : Model -> Element Msg
 viewTimeline model =
     let
-        viewReteEvent msg =
+        eventText msg =
             case msg of
                 Ports.Rete.Initialized _ ->
-                    text "Initialize"
+                    "Initialize"
 
                 Ports.Rete.AddedNode { id, kind } ->
-                    text <| "+ " ++ kind ++ " node " ++ String.fromInt id
+                    "+ " ++ kind ++ " node " ++ String.fromInt id
 
                 Ports.Rete.RemovedNode { id } ->
-                    text <| "- Node " ++ String.fromInt id
+                    "- Node " ++ String.fromInt id
 
                 Ports.Rete.AddedAlphaMemory { id } ->
-                    text <| "+ Alpha node " ++ String.fromInt id
+                    "+ Alpha node " ++ String.fromInt id
 
                 Ports.Rete.RemovedAlphaMemory { id } ->
-                    text <| "- Alpha node " ++ String.fromInt id
+                    "- Alpha node " ++ String.fromInt id
 
                 Ports.Rete.AddedProduction { id } ->
-                    text <| "Added production " ++ String.fromInt id
+                    "Added production " ++ String.fromInt id
 
                 Ports.Rete.RemovedProduction { id } ->
-                    text <| "Removed production " ++ String.fromInt id
+                    "Removed production " ++ String.fromInt id
 
                 event ->
-                    text <| Debug.toString event
+                    Debug.toString event
+
+        background index =
+            if model.selectedStep == index then
+                Background.color Palette.selected
+
+            else
+                Background.color Palette.white
+
+        viewReteEvent index msg =
+            el [ background index ] (text <| eventText msg)
     in
     viewSection "Timeline" <|
-        column [ width fill, scrollbars ]
-            (model.events |> List.map viewReteEvent)
+        column [ width fill ]
+            (model.events |> List.indexedMap viewReteEvent)
 
 
 viewGraph : Graph Entity e -> Element Msg
