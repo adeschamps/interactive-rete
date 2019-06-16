@@ -32,6 +32,7 @@ import TypedSvg.Attributes.InPx as InPx exposing (cx, cy, r, strokeWidth, x1, x2
 import TypedSvg.Core exposing (Svg)
 import TypedSvg.Types exposing (Fill(..))
 import View.Production
+import View.Symbol
 import View.Wme
 
 
@@ -790,15 +791,40 @@ viewSection title body =
 viewSymbols : Model -> Element Msg
 viewSymbols model =
     let
-        symbols =
-            model.symbols
-                |> Symbols.toList
-                |> List.map (\( _, name ) -> { name = name })
+        toViewModel sym =
+            { name = sym
+            , hovered =
+                case model.hover of
+                    NoSelection ->
+                        False
 
-        viewSymbol symbol =
-            Element.text symbol.name
+                    ConstantSelection value ->
+                        sym == value
+
+                    VariableSelection _ _ ->
+                        False
+            , selected =
+                case model.selection of
+                    NoSelection ->
+                        False
+
+                    ConstantSelection value ->
+                        sym == value
+
+                    VariableSelection _ _ ->
+                        False
+            , onClick = UserSelectedSymbol sym
+            , onHover = UserHoveredSymbol sym
+            , onUnhover = UserUnhoveredSymbol
+            }
+
+        viewSymbol ( index, symbol ) =
+            row [ spacing 5 ]
+                [ text <| String.fromInt index ++ ":"
+                , symbol |> toViewModel |> View.Symbol.view
+                ]
     in
-    column [] (symbols |> List.map viewSymbol)
+    column [] (model.symbols |> Symbols.toList |> List.map viewSymbol)
 
 
 viewWmes : Model -> Element Msg
