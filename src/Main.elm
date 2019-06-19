@@ -339,7 +339,12 @@ updateGraph msg model =
                 newNetwork =
                     list |> List.foldr (\node graph -> Graph.update node.id (graphUpdater node) graph) model.network
             in
+            case model.drag of
+                Nothing ->
             { model | network = newNetwork, networkSimulation = newState }
+
+                Just { current, index } ->
+                    { model | network = newNetwork |> moveNodeTo index current, networkSimulation = newState }
 
         UserBeganDrag index xy ->
             { model
