@@ -1,9 +1,9 @@
 module Model.Symbols exposing
-    ( Symbols
+    ( Symbols, Symbol, id
     , new
-    , id, value, toList
+    , symbol, value, toList
     , add
-    , Generator, step, genId, constant, map, map2, map3, andThen
+    , Generator, step, genSym, genId, constant, map, map2, map3, andThen
     )
 
 {-| The rete doesn't really care about the type of data it's working
@@ -13,7 +13,7 @@ correspond to are kept track of by this module.
 
 # Definition
 
-@docs Symbols
+@docs Symbols, Symbol, id
 
 
 # Build
@@ -23,7 +23,7 @@ correspond to are kept track of by this module.
 
 # Query
 
-@docs id, value, toList
+@docs symbol, value, toList
 
 
 # Transform
@@ -40,7 +40,7 @@ Generators allow us to build up a computation that will be executed
 all at once in the context of the symbol manager by calling the `step`
 function.
 
-@docs Generator, step, genId, constant, map, map2, map3, andThen
+@docs Generator, step, genSym, genId, constant, map, map2, map3, andThen
 
 -}
 
@@ -51,10 +51,24 @@ import Dict exposing (Dict)
 -}
 type Symbols
     = Symbols
-        { ids : Dict String Int
+        { ids : Dict String Symbol
         , values : Dict Int String
         , counter : Int
         }
+
+
+{-| A symbol is a key to a value in the Rete. It is internally
+represented as an integer so that it can be easily passed around.
+-}
+type Symbol
+    = Symbol Int
+
+
+{-| Get the internal integer representation of a `Symbol`.
+-}
+id : Symbol -> Int
+id (Symbol id_) =
+    id_
 
 
 {-| Create a new symbol registry.
@@ -68,25 +82,42 @@ new =
         }
 
 
-{-| Get the ID of the given symbol.
+{-| Get the `Symbol` representation of the given value.
 -}
-id : String -> Symbols -> Maybe Int
-id value_ (Symbols { ids }) =
+symbol : String -> Symbols -> Maybe Symbol
+symbol value_ (Symbols { ids }) =
     ids |> Dict.get value_
 
 
-{-| Given a symbol ID, look up its value.
+{-| Given a `Symbol` ID, look up its value.
+
+This makes a small sacrifice in safety and correctness in order to
+gain some convenience. Technically we can't guarantee that a given
+`Symbol` corresponds to a valid value. However, since `Symbol`s can
+only be constructed by this module, this is a relatively easy
+constraint to enforce. The caveat is that if you have more than one
+instance of a `Symbols` registry, you shouldn't query one with the
+other's IDs.
+
+If you do somehow try to retrieve the value for an invalid `Symbol`,
+you'll either get a crash or a default string that is obviously wrong.
+
 -}
-value : Int -> Symbols -> Maybe String
-value id_ (Symbols { values }) =
-    values |> Dict.get id_
+value : Symbol -> Symbols -> String
+value (Symbol id_) (Symbols { values }) =
+    case values |> Dict.get id_ of
+        Just value_ ->
+            value_
+
+        Nothing ->
+            defaultValue ()
 
 
 {-| Get a list of all the ID and symbol pairs.
 -}
-toList : Symbols -> List ( Int, String )
+toList : Symbols -> List ( Symbol, String )
 toList (Symbols { values }) =
-    values |> Dict.toList
+    values |> Dict.toList |> List.map (\( id_, value_ ) -> ( Symbol id_, value_ ))
 
 
 {-| Add a symbol to the registry. This is idempotent.
@@ -99,7 +130,7 @@ add value_ (Symbols model) =
     else
         Symbols
             { model
-                | ids = model.ids |> Dict.insert value_ model.counter
+                | ids = model.ids |> Dict.insert value_ (Symbol model.counter)
                 , values = model.values |> Dict.insert model.counter value_
                 , counter = model.counter + 1
             }
@@ -125,13 +156,22 @@ step (Generator generator) symbols =
     generator symbols
 
 
-{-| Create a generator for the ID of a string. If the symbol manager
-already has an ID for this value, then it'll return that; otherwise
-it'll generate a new ID.
+{-| Create a generator for the `Symbol` ID corresponding to a string.
+If the symbol manager already has an ID for this value, then it'll
+return that; otherwise it'll generate a new ID.
+-}
+genSym : String -> Generator Symbol
+genSym value_ =
+    Generator (getOrCreate value_)
+
+
+{-| Generate a new `Symbol` but return the underlying integer ID
+instead. This is convenient if you creating output for an API that
+requires primitive values.
 -}
 genId : String -> Generator Int
 genId value_ =
-    Generator (getOrCreate value_)
+    genSym value_ |> map id
 
 
 {-| Generate the same value every time. The symbol manager itself will
@@ -215,18 +255,27 @@ andThen func (Generator genA) =
 ---- HELPERS ----
 
 
-getOrCreate : String -> Symbols -> ( Int, Symbols )
+getOrCreate : String -> Symbols -> ( Symbol, Symbols )
 getOrCreate value_ (Symbols model) =
     case Dict.get value_ model.ids of
-        Just id_ ->
-            ( id_, Symbols model )
+        Just sym ->
+            ( sym, Symbols model )
 
         Nothing ->
-            ( model.counter
+            let
+                sym =
+                    Symbol model.counter
+            in
+            ( sym
             , Symbols
                 { model
-                    | ids = model.ids |> Dict.insert value_ model.counter
+                    | ids = model.ids |> Dict.insert value_ sym
                     , values = model.values |> Dict.insert model.counter value_
                     , counter = model.counter + 1
                 }
             )
+
+
+defaultValue : () -> String
+defaultValue () =
+    Debug.todo "A DEFAULT SYMBOL WAS CONSTRUCTED"

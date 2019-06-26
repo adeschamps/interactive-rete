@@ -70,7 +70,7 @@ symbolsTests =
                         Symbols.new
                 in
                 symbols
-                    |> Symbols.id "foo"
+                    |> Symbols.symbol "foo"
                     |> Expect.equal Nothing
         , test "Store and retrieve a symbol" <|
             \_ ->
@@ -79,7 +79,7 @@ symbolsTests =
                         Symbols.new |> Symbols.add "foo"
                 in
                 symbols
-                    |> Symbols.id "foo"
+                    |> Symbols.symbol "foo"
                     |> Result.fromMaybe ()
                     |> Expect.ok
         , test "Storage is idempotent" <|
@@ -88,19 +88,19 @@ symbolsTests =
                     symbols1 =
                         Symbols.new |> Symbols.add "foo"
 
-                    id1 =
-                        symbols1 |> Symbols.id "foo"
+                    sym1 =
+                        symbols1 |> Symbols.symbol "foo"
 
                     symbols2 =
                         symbols1 |> Symbols.add "foo"
 
-                    id2 =
-                        symbols2 |> Symbols.id "foo"
+                    sym2 =
+                        symbols2 |> Symbols.symbol "foo"
                 in
-                id1
+                sym1
                     |> Expect.all
                         [ Expect.notEqual Nothing
-                        , Expect.equal id2
+                        , Expect.equal sym2
                         ]
         , test "No duplicate symbols" <|
             \_ ->
@@ -108,10 +108,10 @@ symbolsTests =
                     symbols =
                         Symbols.new |> Symbols.add "foo" |> Symbols.add "bar"
                 in
-                Symbols.id "foo" symbols
+                Symbols.symbol "foo" symbols
                     |> Expect.all
                         [ Expect.notEqual Nothing
-                        , Expect.notEqual (Symbols.id "bar" symbols)
+                        , Expect.notEqual (Symbols.symbol "bar" symbols)
                         ]
         , fuzz (list string) "Roundtrip" <|
             \strings ->
@@ -119,7 +119,7 @@ symbolsTests =
                     generator =
                         strings
                             |> List.foldr
-                                (Symbols.genId >> Symbols.map2 (::))
+                                (Symbols.genSym >> Symbols.map2 (::))
                                 (Symbols.constant [])
 
                     ( ids, symbols ) =
@@ -129,6 +129,6 @@ symbolsTests =
                         Symbols.value id symbols
                 in
                 ids
-                    |> List.filterMap getValue
+                    |> List.map getValue
                     |> Expect.equal strings
         ]
