@@ -137,8 +137,7 @@ port addedWme : (AddedWmeArgs -> msg) -> Sub msg
 
 
 type alias AddedWmeArgs =
-    { timetag : Int
-    , id : Int
+    { id : Int
     , attribute : Int
     , value : Int
     }
@@ -148,7 +147,9 @@ port removedWme : (RemovedWmeArgs -> msg) -> Sub msg
 
 
 type alias RemovedWmeArgs =
-    { timetag : Int
+    { id : Int
+    , attribute : Int
+    , value : Int
     }
 
 

@@ -466,10 +466,8 @@ updateRete msg model =
         Ports.Rete.AddedWme args ->
             model
 
-        Ports.Rete.RemovedWme { timetag } ->
-            { model
-                | wmes = model.wmes |> Wmes.remove timetag
-            }
+        Ports.Rete.RemovedWme args ->
+            model
 
         Ports.Rete.AddedAlphaMemory { id } ->
             let
