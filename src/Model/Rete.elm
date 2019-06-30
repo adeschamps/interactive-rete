@@ -1,4 +1,4 @@
-module Model.Rete exposing (Node, Rete, Symbol, SymbolID, Wme(..), addNode, addToken, empty, removeNode, removeToken)
+module Model.Rete exposing (Node(..), Rete, Symbol, SymbolID, Wme(..), addNode, addToken, empty, removeNode, removeToken)
 
 import Graph exposing (Graph)
 import IntDict
@@ -27,7 +27,7 @@ type Node
     = Alpha AlphaNode
     | Beta BetaNode
     | Join
-    | Production
+    | Production ProductionNode
 
 
 type alias AlphaNode =
@@ -43,6 +43,11 @@ type Test
 
 type alias BetaNode =
     { tokens : List TokenID
+    }
+
+
+type alias ProductionNode =
+    { matches : List TokenID
     }
 
 

@@ -59,7 +59,7 @@ type alias Model =
 
 
 type alias Entity =
-    Force.Entity NodeId { value : String }
+    Force.Entity NodeId { value : Rete.Node }
 
 
 type SymbolSelection
@@ -395,7 +395,7 @@ updateRete msg model =
                 | network =
                     Graph.empty
                         |> Graph.insert
-                            { node = Node args.dummyNodeId <| Force.entity args.dummyNodeId "Beta (root)"
+                            { node = Node args.dummyNodeId <| Force.entity args.dummyNodeId (Rete.Beta { tokens = [] })
                             , incoming = IntDict.empty
                             , outgoing = IntDict.empty
                             }
@@ -421,7 +421,22 @@ updateRete msg model =
                 entity : Entity
                 entity =
                     { id = args.id
-                    , value = args.kind
+                    , value =
+                        case args.kind of
+                            "Alpha" ->
+                                Rete.Alpha { test = [], wmes = [] }
+
+                            "Beta" ->
+                                Rete.Beta { tokens = [] }
+
+                            "Join" ->
+                                Rete.Join
+
+                            "P" ->
+                                Rete.Production { matches = [] }
+
+                            other ->
+                                Debug.todo <| "Unhandled node type: " ++ other
                     , x = x
                     , y = y
                     , vx = 0
@@ -456,7 +471,22 @@ updateRete msg model =
             }
 
         Ports.Rete.AddedToken { id, parentId, nodeId } ->
-            model
+            let
+                -- addToken : Entity -> Entity
+                addToken node =
+                    case node of
+                        Rete.Beta beta ->
+                            Rete.Beta { beta | tokens = id :: beta.tokens }
+
+                        Rete.Production production ->
+                            Rete.Production { production | matches = id :: production.matches }
+
+                        _ ->
+                            node
+            in
+            { model
+                | network = model.network |> Graph.update nodeId (Maybe.map (mapNodeValue addToken))
+            }
 
         Ports.Rete.RemovedToken { id } ->
             { model
@@ -478,7 +508,7 @@ updateRete msg model =
 
                 entity =
                     { id = alphaNodeId id
-                    , value = "Alpha"
+                    , value = Rete.Alpha { test = [], wmes = [] }
                     , x = x
                     , y = y
                     , vx = 0
@@ -626,32 +656,36 @@ viewTimeline model =
 viewGraph : Graph Entity e -> Element Msg
 viewGraph network =
     let
-        linkElement : Graph Entity e -> Edge e -> Svg Msg
+        linkElement : Graph Entity e -> Edge e -> Maybe (Svg Msg)
         linkElement graph edge =
             let
-                source =
+                maybeSource =
                     Graph.get edge.from graph
                         |> Maybe.map (.node >> .label)
-                        |> Maybe.withDefault (Force.entity 0 "")
 
-                target =
+                maybeTarget =
                     Graph.get edge.to graph
                         |> Maybe.map (.node >> .label)
-                        |> Maybe.withDefault (Force.entity 0 "")
             in
-            Svg.line
-                [ x1 source.x
-                , y1 source.y
-                , x2 target.x
-                , y2 target.y
-                , stroke (Color.rgb 0 0 0)
-                ]
-                []
+            case ( maybeSource, maybeTarget ) of
+                ( Just source, Just target ) ->
+                    Just <|
+                        Svg.line
+                            [ x1 source.x
+                            , y1 source.y
+                            , x2 target.x
+                            , y2 target.y
+                            , stroke (Color.rgb 0 0 0)
+                            ]
+                            []
+
+                _ ->
+                    Nothing
     in
     Element.html <|
         svg [ viewBox 0 0 800 600 ]
             [ Graph.edges network
-                |> List.map (linkElement network)
+                |> List.filterMap (linkElement network)
                 |> Svg.g [ class [ "links" ] ]
             , Graph.nodes network
                 |> List.map nodeElement
@@ -667,34 +701,45 @@ nodeElement node =
 
         nodeColor =
             case node.label.value of
-                "Alpha" ->
+                Rete.Alpha _ ->
                     Color.yellow
 
-                "Beta" ->
+                Rete.Beta _ ->
                     Color.lightPurple
 
-                "Join" ->
+                Rete.Join ->
                     Color.green
 
-                "P" ->
+                Rete.Production _ ->
                     Color.gray
-
-                _ ->
-                    Color.black
 
         nodeRadius =
             case node.label.value of
-                "Join" ->
+                Rete.Join ->
                     5
 
                 _ ->
                     10
 
+        label =
+            case node.label.value of
+                Rete.Alpha _ ->
+                    "Alpha " ++ String.fromInt node.id
+
+                Rete.Beta { tokens } ->
+                    "Beta " ++ String.fromInt node.id ++ " (" ++ String.fromInt (List.length tokens) ++ " tokens)"
+
+                Rete.Join ->
+                    "Join " ++ String.fromInt node.id
+
+                Rete.Production { matches } ->
+                    "P " ++ String.fromInt node.id ++ " (" ++ String.fromInt (List.length matches) ++ " matches)"
+
         values =
-            [ Svg.title [] [ TypedSvg.Core.text (node.label.value ++ " " ++ String.fromInt node.id) ] ]
+            [ Svg.title [] [ TypedSvg.Core.text label ] ]
     in
     case node.label.value of
-        "Alpha" ->
+        Rete.Alpha _ ->
             let
                 size =
                     20
@@ -959,3 +1004,28 @@ assumes that the ids will never reach that number.
 alphaNodeId : Int -> Int
 alphaNodeId id =
     id + 10000
+
+
+{-| Update the nested value in a NodeContext. This is a convenience
+function because between the graph library itself and the force
+directed graph's requirements, the actual node value ends up being
+nested rather deep.
+-}
+mapNodeValue : (v -> v) -> NodeContext { n | value : v } e -> NodeContext { n | value : v } e
+mapNodeValue transform ctx =
+    let
+        node =
+            ctx.node
+
+        label =
+            node.label
+    in
+    { ctx
+        | node =
+            { node
+                | label =
+                    { label
+                        | value = transform label.value
+                    }
+            }
+    }
