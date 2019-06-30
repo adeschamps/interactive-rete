@@ -472,7 +472,7 @@ updateRete msg model =
 
         Ports.Rete.AddedToken { id, parentId, nodeId } ->
             let
-                -- addToken : Entity -> Entity
+                addToken : Rete.Node -> Rete.Node
                 addToken node =
                     case node of
                         Rete.Beta beta ->
