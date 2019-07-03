@@ -341,7 +341,7 @@ updateGraph msg model =
             in
             case model.drag of
                 Nothing ->
-            { model | network = newNetwork, networkSimulation = newState }
+                    { model | network = newNetwork, networkSimulation = newState }
 
                 Just { current, index } ->
                     { model | network = newNetwork |> moveNodeTo index current, networkSimulation = newState }
