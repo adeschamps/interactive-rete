@@ -40,8 +40,7 @@ sequence of function that produce the next state.
 -}
 type Timeline a
     = Timeline
-        { initialState : a
-        , currentState : a
+        { currentState : a
         , history : Array (Block a)
         , transitions : List (a -> a)
         }
@@ -63,8 +62,7 @@ chunkSize =
 init : a -> Timeline a
 init initial =
     Timeline
-        { initialState = initial
-        , currentState = initial
+        { currentState = initial
         , history = Array.fromList [ { start = 0, states = [ initial ] } ]
         , transitions = []
         }
