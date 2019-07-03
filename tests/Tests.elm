@@ -1,21 +1,13 @@
-module Tests exposing (all)
+module Tests exposing (productions, symbolsTests, timelineTests, wmes)
 
 import Expect
 import Fuzz exposing (..)
 import Model.Production as Production
 import Model.Symbols as Symbols
+import Model.Timeline as Timeline
 import Model.Wme as Wme
 import Parser
 import Test exposing (..)
-
-
-all : Test
-all =
-    describe "Test Suite"
-        [ productions
-        , wmes
-        , symbolsTests
-        ]
 
 
 wmes : Test
@@ -131,4 +123,73 @@ symbolsTests =
                 ids
                     |> List.map getValue
                     |> Expect.equal strings
+        ]
+
+
+timelineTests : Test
+timelineTests =
+    describe "Timeline"
+        [ test "Initial state" <|
+            \_ ->
+                Timeline.init 1
+                    |> Timeline.state 0
+                    |> Expect.equal 1
+        , test "Initial size" <|
+            \_ ->
+                Timeline.init ()
+                    |> Timeline.size
+                    |> Expect.equal 1
+        , test "Double values" <|
+            \_ ->
+                Timeline.init 1
+                    |> Timeline.step ((*) 2)
+                    |> Timeline.step ((*) 2)
+                    |> Timeline.state 2
+                    |> Expect.equal 4
+        , describe "Intermediate state"
+            [ test "Of small timeline" <|
+                \_ ->
+                    Timeline.init 1
+                        |> Timeline.step ((*) 2)
+                        |> Timeline.step ((*) 2)
+                        |> Timeline.step ((*) 2)
+                        |> Timeline.step ((*) 2)
+                        |> Timeline.state 2
+                        |> Expect.equal 4
+            , test "Of large timeline" <|
+                \_ ->
+                    List.repeat 128 ((+) 1)
+                        |> List.foldl Timeline.step (Timeline.init 0)
+                        |> Timeline.state 71
+                        |> Expect.equal 71
+            ]
+        , test "Size of large timeline" <|
+            \_ ->
+                List.repeat 128 identity
+                    |> List.foldr Timeline.step (Timeline.init ())
+                    |> Timeline.size
+                    |> Expect.equal 129
+        , describe "Cache size"
+            [ test "Empty timeline" <|
+                \_ ->
+                    Timeline.init ()
+                        |> Timeline.cacheSize
+                        |> Expect.equal 1
+            , test "Small timeline" <|
+                \_ ->
+                    Timeline.init ()
+                        |> Timeline.step identity
+                        |> Timeline.step identity
+                        |> Timeline.cacheSize
+                        |> Expect.equal 3
+            , test "Large timeline" <|
+                \_ ->
+                    List.repeat 128 identity
+                        |> List.foldr Timeline.step (Timeline.init ())
+                        |> Timeline.cacheSize
+                        |> Expect.all
+                            [ Expect.greaterThan 0
+                            , Expect.lessThan 128
+                            ]
+            ]
         ]
