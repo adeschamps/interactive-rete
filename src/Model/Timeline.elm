@@ -20,7 +20,7 @@ updates, we have to do a lot more computation in order to recreate a past state.
 To balance these tradeoffs, we store intermediate states as well. These are
 stored in a series of lists of increasingly coarse resolution. This means that
 for more recent states we might have every one saved, while for older states we
-might only save ever sixteenth state, and then do a bit of computation in order
+might only save every sixteenth state, and then do a bit of computation in order
 to recreate the state that we're looking for.
 
 @docs Timeline, init, step
