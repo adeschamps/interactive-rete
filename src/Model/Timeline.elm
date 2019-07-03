@@ -1,12 +1,34 @@
-module Model.Timeline exposing (Timeline, cacheSize, init, size, state, step)
+module Model.Timeline exposing
+    ( Timeline, init, step
+    , size, state, currentState, cacheSize
+    )
 
 {-| Suppose you want to travel back in time to the state of the world at any
 given moment. The simplest thing to do would be to store a list of all the past
 states, and then retrieve the state at a given index. This works, but it becomes
 problematic because it consumes a lot of memory.
 
-That said, this module doesn't do anything optimized yet. We'll try to get the
-API right, then make it efficient later.
+This module stores the initial state of a model along with a list of functions
+that can be used to produce the next state. This still takes a linear amount of
+memory, but the transition functions should be much smaller than the model
+itself. This is because a typical transition function is just an update function
+that has been partially applied with a relatively small message. Starting from
+the initial state, we can recreate any other state by applying all the updates.
+
+However, we've just traded one problem for another - by just storing the
+updates, we have to do a lot more computation in order to recreate a past state.
+To balance these tradeoffs, we store intermediate states as well. These are
+stored in a series of lists of increasingly coarse resolution. This means that
+for more recent states we might have every one saved, while for older states we
+might only save ever sixteenth state, and then do a bit of computation in order
+to recreate the state that we're looking for.
+
+@docs Timeline, init, step
+
+
+# Query
+
+@docs size, state, currentState, cacheSize
 
 -}
 
@@ -48,6 +70,10 @@ init initial =
         }
 
 
+{-| Get the total number of states that have been stored in the timeline. The
+timeline does not necessarily store all these states, but they can all be
+recreated by reapplying the transition functions.
+-}
 size : Timeline a -> Int
 size (Timeline { transitions }) =
     1 + List.length transitions
@@ -65,6 +91,8 @@ state index (Timeline model) =
                 |> List.foldr identity startState
 
         Nothing ->
+            -- This branch should only be reached if the caller has asked for a
+            -- target index that is out of bounds.
             model.currentState
 
 
@@ -111,8 +139,10 @@ cacheSize (Timeline model) =
     Array.foldl (.states >> List.length >> (+)) 0 model.history
 
 
-{-| Create a new state in the timeline by applying the given function to the
-most recent state.
+{-| Create a new state in the timeline by applying the given transition function
+to the most recent state. The transition function itself will be saved so that
+the timeline can recreate the new state even if it no longer being explicitly
+stored.
 -}
 step : (a -> a) -> Timeline a -> Timeline a
 step transition (Timeline model) =
