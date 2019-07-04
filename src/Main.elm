@@ -823,10 +823,10 @@ viewSymbols model =
             , onUnhover = UserUnhoveredSymbol
             }
 
-        viewSymbol ( index, symbol ) =
+        viewSymbol ( symbol, value ) =
             row [ spacing 5 ]
-                [ text <| String.fromInt index ++ ":"
-                , symbol |> toViewModel |> View.Symbol.view
+                [ text <| String.fromInt (Symbols.id symbol) ++ ":"
+                , value |> toViewModel |> View.Symbol.view
                 ]
     in
     column [] (model.symbols |> Symbols.toList |> List.map viewSymbol)
