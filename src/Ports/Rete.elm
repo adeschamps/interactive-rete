@@ -1,6 +1,9 @@
 port module Ports.Rete exposing
     ( Msg(..), subscriptions
-    , addProduction, AddProductionArgs, removeProduction, RemoveProductionArgs, addWme, AddWmeArgs, removeWme, RemoveWmeArgs
+    , addProduction, AddProductionArgs
+    , removeProduction, RemoveProductionArgs
+    , addWme, AddWmeArgs
+    , removeWme, RemoveWmeArgs
     )
 
 {-| This module defines the interface for interacting with the
@@ -14,7 +17,17 @@ underlying rete implementation.
 
 # Outgoing
 
-@docs addProduction, AddProductionArgs, removeProduction, RemoveProductionArgs, addWme, AddWmeArgs, removeWme, RemoveWmeArgs
+
+## Productions
+
+@docs addProduction, AddProductionArgs
+@docs removeProduction, RemoveProductionArgs
+
+
+## WMEs
+
+@docs addWme, AddWmeArgs
+@docs removeWme, RemoveWmeArgs
 
 -}
 
