@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "cypress": "^4.3.0",
-    "start-server-and-test": "^1.10.11"
+    "start-server-and-test": "^1.11.0"
   },
   "scripts": {
     "test": "elm-format --validate . && elm-test && cypress run",
