@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "dependencies": {
-    "create-elm-app": "^4.2.11",
+    "create-elm-app": "^4.2.29",
     "elm-format": "^0.8.3",
     "elm-typescript-interop": "^0.0.17",
     "rete": "file:rete/pkg"
